@@ -1,5 +1,5 @@
-import { ReactElement, useState } from "react";
-import { Canvas, useFrame } from "@react-three/fiber";
+import { ReactElement } from "react";
+import { Canvas } from "@react-three/fiber";
 import { Geometry } from "./Geometry";
 
 export const PageCanvas = (): ReactElement => {

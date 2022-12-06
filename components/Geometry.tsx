@@ -1,5 +1,5 @@
 import { ReactElement, useState } from "react";
-import { Canvas, useFrame } from "@react-three/fiber";
+import { useFrame } from "@react-three/fiber";
 
 export const Geometry = (): ReactElement => {
   const [boxPosition, setBoxPosition] = useState<{
@@ -13,9 +13,6 @@ export const Geometry = (): ReactElement => {
   });
 
   useFrame((state, delta, xrFrame) => {
-    // console.log("frame");
-    console.log(delta, xrFrame, state.clock.getElapsedTime());
-    // console.log(Math.cos(delta));
     setBoxPosition({
       ...boxPosition,
       x: Math.cos(state.clock.getElapsedTime()),
