@@ -1,7 +1,13 @@
 import { ReactElement, useState } from "react";
-import { useFrame } from "@react-three/fiber";
+import { useFrame, useThree } from "@react-three/fiber";
+import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 
 export const Geometry = (): ReactElement => {
+  const { camera, gl } = useThree();
+  const controls = new OrbitControls(camera, gl.domElement);
+  controls.enableDamping = true;
+  controls.rotateSpeed = 0.5;
+  controls.zoomSpeed = 0.1;
   const [boxPosition, setBoxPosition] = useState<{
     x: number;
     y: number;
@@ -13,11 +19,12 @@ export const Geometry = (): ReactElement => {
   });
 
   useFrame((state, delta, xrFrame) => {
-    setBoxPosition({
-      ...boxPosition,
-      x: Math.cos(state.clock.getElapsedTime()),
-      y: Math.sin(state.clock.getElapsedTime()),
-    });
+    // setBoxPosition({
+    //   ...boxPosition,
+    //   x: Math.cos(state.clock.getElapsedTime()),
+    //   y: Math.sin(state.clock.getElapsedTime()),
+    // });
+    controls.update();
   });
 
   return (
