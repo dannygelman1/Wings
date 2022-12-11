@@ -1,13 +1,19 @@
-import { ReactElement, useState } from "react";
+import { ReactElement, useRef, useState } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
+import { PointLight } from "three/src/lights/PointLight";
 
 export const Geometry = (): ReactElement => {
-  const { camera, gl } = useThree();
+  const { camera, gl, scene } = useThree();
   const controls = new OrbitControls(camera, gl.domElement);
   controls.enableDamping = true;
   controls.rotateSpeed = 0.5;
   controls.zoomSpeed = 0.1;
+
+  const pointLight = useRef<PointLight>(null);
+  scene.add(camera);
+  if (pointLight.current) camera.add(pointLight.current);
+
   const [boxPosition, setBoxPosition] = useState<{
     x: number;
     y: number;
@@ -29,7 +35,7 @@ export const Geometry = (): ReactElement => {
 
   return (
     <>
-      <pointLight position={[-5, -4, 10]} />
+      <pointLight ref={pointLight} position={[4, 4, 4]} />
       <mesh
         position={[boxPosition.x, boxPosition.y, boxPosition.z]}
         // rotation={[boxPosition.x, boxPosition.y, boxPosition.z]}
