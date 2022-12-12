@@ -13,11 +13,7 @@ export const PageCanvas = (): ReactElement => {
   // });
   return (
     <div className="w-full h-full h-grow bg-black absolute">
-      <Canvas
-        shadows={true}
-        camera={{ fov: 50, position: [-10, 0, 0] }}
-        className="bg-green-500"
-      >
+      <Canvas shadows={true} camera={{ fov: 50, position: [-10, 0, 0] }}>
         {/* <Environment map={map} background /> */}
         <Geometry />
         <primitive object={new AxesHelper(10)} />

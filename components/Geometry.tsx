@@ -1,8 +1,14 @@
-import { ReactElement, useRef, useState } from "react";
+import { ReactElement, useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import { PointLight } from "three/src/lights/PointLight";
-import { BackSide, Color, DirectionalLight, DoubleSide } from "three";
+import {
+  Color,
+  DirectionalLight,
+  DoubleSide,
+  LoadingManager,
+  TextureLoader,
+} from "three";
 
 export const Geometry = (): ReactElement => {
   const { camera, gl, scene } = useThree();
@@ -16,6 +22,10 @@ export const Geometry = (): ReactElement => {
   scene.add(camera);
   if (pointLight.current) camera.add(pointLight.current);
   if (dirLight.current) camera.add(dirLight.current);
+
+  const textureLoader = new TextureLoader(new LoadingManager());
+  const baseColor = textureLoader.load("/Wings/rocky_trail_diff_2k.jpg");
+  const disp = textureLoader.load("/Wings/rocky_trail_disp_2k.png");
 
   useFrame(() => {
     controls.update();
@@ -31,13 +41,18 @@ export const Geometry = (): ReactElement => {
       />
       <directionalLight
         ref={dirLight}
-        position={[0, 3, 0]}
+        position={[0, 4, 0]}
         intensity={0.5}
         castShadow={true}
       />
-      <mesh position={[0, 1, 0]} receiveShadow={true} castShadow={true}>
-        <boxGeometry />
-        <meshStandardMaterial color="hotpink" />
+      <mesh position={[0, 0.9, 0]} receiveShadow={true} castShadow={true}>
+        <sphereGeometry args={[0.7, 150, 150]} />
+        <meshStandardMaterial
+          color="hotpink"
+          map={baseColor}
+          displacementMap={disp}
+          displacementScale={0.15}
+        />
       </mesh>
       <mesh
         position={[0, 2, 2]}
@@ -50,16 +65,16 @@ export const Geometry = (): ReactElement => {
       </mesh>
       <mesh position={[0, 3, 3]} receiveShadow={true} castShadow={true}>
         <boxGeometry />
-        <meshStandardMaterial color="gray" />
+        <meshStandardMaterial color="gray" map={baseColor} />
       </mesh>
       <mesh
-        position={[-4, 1, 0]}
+        position={[0, 2, -3]}
         receiveShadow={true}
         castShadow={true}
         scale={2}
       >
         <sphereGeometry />
-        <meshPhysicalMaterial color="gray" roughness={0.1} metalness={0.5} />
+        <meshPhysicalMaterial roughness={0.1} color="purple" />
       </mesh>
       <mesh
         position={[0, 0, 0]}
