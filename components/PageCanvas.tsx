@@ -9,7 +9,7 @@ export const PageCanvas = (): ReactElement => {
     files:
       process.env.NEXT_PUBLIC_ENVIRONMENT === "Development"
         ? `${process.env.NEXT_PUBLIC_HOST}/clarens_night_02_4k.hdr`
-        : `https://dannygelman1.github.io/Wings/clarens_night_02_4k.hdr`,
+        : "/Wings/clarens_night_02_4k.hdr",
   });
   return (
     <div className="w-full h-full h-grow bg-black absolute">
