@@ -17,22 +17,7 @@ export const Geometry = (): ReactElement => {
   if (pointLight.current) camera.add(pointLight.current);
   if (dirLight.current) camera.add(dirLight.current);
 
-  const [boxPosition, setBoxPosition] = useState<{
-    x: number;
-    y: number;
-    z: number;
-  }>({
-    x: 0,
-    y: 1,
-    z: 0,
-  });
-
-  useFrame((state, delta, xrFrame) => {
-    // setBoxPosition({
-    //   ...boxPosition,
-    //   x: Math.cos(state.clock.getElapsedTime()),
-    //   y: Math.sin(state.clock.getElapsedTime()),
-    // });
+  useFrame(() => {
     controls.update();
   });
 
@@ -50,16 +35,12 @@ export const Geometry = (): ReactElement => {
         intensity={0.5}
         castShadow={true}
       />
-      <mesh
-        position={[boxPosition.x, boxPosition.y, boxPosition.z]}
-        receiveShadow={true}
-        castShadow={true}
-      >
+      <mesh position={[0, 1, 0]} receiveShadow={true} castShadow={true}>
         <boxGeometry />
         <meshStandardMaterial color="hotpink" />
       </mesh>
       <mesh
-        position={[boxPosition.x, boxPosition.y + 1, boxPosition.z + 2]}
+        position={[0, 2, 2]}
         receiveShadow={true}
         castShadow={true}
         scale={[2, 0.5, 4]}
@@ -67,11 +48,7 @@ export const Geometry = (): ReactElement => {
         <boxGeometry />
         <meshStandardMaterial color="hotpink" roughness={0.1} />
       </mesh>
-      <mesh
-        position={[boxPosition.x, boxPosition.y + 2, boxPosition.z + 3]}
-        receiveShadow={true}
-        castShadow={true}
-      >
+      <mesh position={[0, 3, 3]} receiveShadow={true} castShadow={true}>
         <boxGeometry />
         <meshStandardMaterial color="gray" />
       </mesh>
