@@ -23,7 +23,7 @@ export const Birds = ({ border }: BirdsProps): ReactElement => {
   useFrame(() => {
     controls.update();
   });
-  const initialBirds = Array.from(Array(100)).map(() => [
+  const initialBirds = Array.from(Array(500)).map(() => [
     MathUtils.randFloat((-1 * border[0]) / 2, border[0] / 2),
     MathUtils.randFloat((-1 * border[1]) / 2, border[1] / 2),
     MathUtils.randFloat((-1 * border[2]) / 2, border[2] / 2),
@@ -49,19 +49,12 @@ export const Birds = ({ border }: BirdsProps): ReactElement => {
     // const t = state.clock.getElapsedTime();
     // console.log(t);
     const updateBirds = birds.map((b, i) => {
-      // const t = state.clock.getElapsedTime();
-      // console.log(t);
-      const newPos = moveForward(b, 0.5);
-      const pMoveAway = moveFromEachother(birds, newPos, i, 2, 0.01);
-      const pMoveTogether = moveWithEachother(birds, pMoveAway, i, 4, 0.05);
-      const pMoveCenter = moveToEachother(birds, pMoveTogether, i, 4, 0.05);
-      const posMoveFromBounds = moveFromBounds(border, pMoveCenter, 5);
-      return posMoveFromBounds;
+      const newPos = move(birds, b, i, border, 8, 40, 0.0005, 0.05, 0.05, 0.2);
+      return newPos;
     });
     setBirds(updateBirds);
   });
 
-  console.log("birds", birds);
   return (
     <>
       <pointLight
@@ -82,7 +75,7 @@ export const Birds = ({ border }: BirdsProps): ReactElement => {
       </mesh>
       {birds.map((bird, i) => (
         <mesh key={i} position={[bird[0], bird[1], bird[2]]}>
-          <boxGeometry args={[0.7, 0.7, 0.7]} />
+          <coneGeometry args={[0.7, 0.7]} />
           <meshStandardMaterial color="green" />
         </mesh>
       ))}
@@ -113,11 +106,11 @@ const moveFromBounds = (
   turnFactor: number
 ): number[] => {
   const right = bounds[0] / 2;
-  const left = -bounds[0] / 2;
+  const left = (-1 * bounds[0]) / 2;
   const up = bounds[1] / 2;
-  const down = -bounds[1] / 2;
+  const down = (-1 * bounds[1]) / 2;
   const front = bounds[2] / 2;
-  const back = -bounds[2] / 2;
+  const back = (-1 * bounds[2]) / 2;
   if (b[0] > right) b[3] = b[3] - turnFactor;
   if (b[0] < left) b[3] = b[3] + turnFactor;
   if (b[1] > up) b[4] = b[4] - turnFactor;
@@ -214,6 +207,100 @@ const moveToEachother = (
     bird[4] += (yPos / neighbors - bird[1]) * centeringFactor;
     bird[5] += (zPos / neighbors - bird[2]) * centeringFactor;
   }
+  return bird;
+};
+
+const moveToBias = (
+  birds: number[][],
+  bird: number[],
+  biVal: number
+): number[] => {
+  for (let i = 0; i < birds.length; i++) {
+    if (i < birds.length / 10) {
+      bird[3] = (1 - biVal) * bird[3] + biVal;
+    }
+    if (i > birds.length / 10 && i < (2 * birds.length) / 10) {
+      bird[3] = (1 - biVal) * bird[3] - biVal;
+    }
+  }
+
+  return bird;
+};
+
+const move = (
+  birds: number[][],
+  bird: number[],
+  bIndex: number,
+  bounds: number[],
+  protectedRange: number,
+  visualRange: number,
+  centeringFactor: number,
+  matchingFactor: number,
+  avoidanceFactor: number,
+  turnFactor: number
+): number[] => {
+  const currentBirdPos = new Vector3(bird[0], bird[1], bird[2]);
+  let xPos = 0;
+  let yPos = 0;
+  let zPos = 0;
+  let xVel = 0;
+  let yVel = 0;
+  let zVel = 0;
+  let closeX = 0;
+  let closeY = 0;
+  let closeZ = 0;
+  let neighbors = 0;
+  for (let i = 0; i < birds.length; i++) {
+    if (i !== bIndex) {
+      const birdPos = new Vector3(birds[i][0], birds[i][1], birds[i][2]);
+      if (currentBirdPos.distanceTo(birdPos) < visualRange) {
+        xPos += birds[i][0];
+        yPos += birds[i][1];
+        zPos += birds[i][2];
+        xVel += birds[i][3];
+        yVel += birds[i][4];
+        zVel += birds[i][5];
+        neighbors += 1;
+      }
+      if (currentBirdPos.distanceTo(birdPos) < protectedRange) {
+        closeX += currentBirdPos.x - birdPos.x;
+        closeY += currentBirdPos.y - birdPos.y;
+        closeZ += currentBirdPos.z - birdPos.z;
+      }
+    }
+  }
+  if (neighbors > 0) {
+    bird[3] +=
+      (xPos / neighbors - bird[0]) * centeringFactor +
+      (xVel / neighbors - bird[3]) * matchingFactor;
+    bird[4] +=
+      (yPos / neighbors - bird[1]) * centeringFactor +
+      (yVel / neighbors - bird[4]) * matchingFactor;
+    bird[5] +=
+      (zPos / neighbors - bird[2]) * centeringFactor +
+      (zVel / neighbors - bird[5]) * matchingFactor;
+  }
+  bird[3] += closeX * avoidanceFactor;
+  bird[4] += closeY * avoidanceFactor;
+  bird[5] += closeZ * avoidanceFactor;
+
+  const right = bounds[0] / 2;
+  const left = (-1 * bounds[0]) / 2;
+  const up = bounds[1] / 2;
+  const down = (-1 * bounds[1]) / 2;
+  const front = bounds[2] / 2;
+  const back = (-1 * bounds[2]) / 2;
+  if (bird[0] > right) bird[3] -= turnFactor;
+  if (bird[0] < left) bird[3] += turnFactor;
+  if (bird[1] > up) bird[4] -= turnFactor;
+  if (bird[1] < down) bird[4] += turnFactor;
+  if (bird[2] > front) bird[5] -= turnFactor;
+  if (bird[2] < back) bird[5] += turnFactor;
+
+  bird[0] += bird[3];
+  bird[1] += bird[4];
+  bird[2] += bird[5];
+
   return bird;
 };
 
