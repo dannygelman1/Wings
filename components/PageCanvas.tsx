@@ -1,8 +1,9 @@
-import { ReactElement, useState } from "react";
-import { Canvas } from "@react-three/fiber";
+import { ReactElement, useRef, useState } from "react";
+import { Canvas, PrimitiveProps } from "@react-three/fiber";
 // import { Geometry } from "./Geometry";
 import { Birds } from "./Birds";
-import { AxesHelper } from "three";
+import { AxesHelper, Color } from "three";
+import { CircleCone } from "./CircleCone";
 
 export const PageCanvas = (): ReactElement => {
   // const map = useEnvironment({
@@ -20,8 +21,15 @@ export const PageCanvas = (): ReactElement => {
         <Canvas shadows={true} camera={{ fov: 50, position: [300, 300, 300] }}>
           {/* <Environment map={map} background /> */}
           {/* <Geometry /> */}
+          {/* <CircleCone /> */}
           <Birds border={border} />
-          <primitive object={new AxesHelper(10)} />
+          {/* <primitive
+            object={new AxesHelper(10).setColors(
+              new Color(1, 1, 1),
+              new Color(1, 0, 0),
+              new Color(0, 1, 0)
+            )}
+          /> */}
         </Canvas>
       </div>
       <div className="absolute">

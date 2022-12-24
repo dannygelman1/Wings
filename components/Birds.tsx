@@ -1,8 +1,16 @@
-import { ReactElement, useRef, useState } from "react";
+import { ReactElement, useEffect, useRef, useState } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import { PointLight } from "three/src/lights/PointLight";
-import { Color, DirectionalLight, Vector3, MathUtils } from "three";
+import {
+  Color,
+  DirectionalLight,
+  Vector3,
+  MathUtils,
+  Quaternion,
+  Mesh,
+  ConeGeometry,
+} from "three";
 
 interface BirdsProps {
   border: number[];
@@ -19,6 +27,12 @@ export const Birds = ({ border }: BirdsProps): ReactElement => {
   scene.add(camera);
   if (pointLight.current) camera.add(pointLight.current);
   if (dirLight.current) camera.add(dirLight.current);
+  useEffect(() => {
+    scene.children.forEach((child) => {
+      if (child instanceof Mesh && child.geometry instanceof ConeGeometry)
+        child.geometry?.rotateX(Math.PI / 2);
+    });
+  }, []);
 
   useFrame(() => {
     controls.update();
@@ -69,20 +83,39 @@ export const Birds = ({ border }: BirdsProps): ReactElement => {
         intensity={0.5}
         castShadow={true}
       />
-      <mesh position={[0, 0, 0]}>
+      {/* <mesh position={[0, 0, 0]}>
         <boxGeometry args={[border[0], border[1], border[2]]} />
         <meshStandardMaterial color="gray" opacity={0.3} transparent />
-      </mesh>
+      </mesh> */}
       {birds.map((bird, i) => (
-        <mesh key={i} position={[bird[0], bird[1], bird[2]]}>
-          <coneGeometry args={[0.7, 0.7]} />
+        <mesh
+          key={i}
+          position={[bird[0], bird[1], bird[2]]}
+          onUpdate={(self) => {
+            self.lookAt(
+              new Vector3(
+                bird[0] + bird[3],
+                bird[1] + bird[4],
+                bird[2] + bird[5]
+              )
+            );
+            // self.rotateX(Math.PI / 2);
+            // rotationMatrix.lookAt(
+            //   new Vector3(boxPosition.x, boxPosition.y, boxPosition.z),
+            //   self.position,
+            //   self.up
+            // );
+            // targetQuaternion.setFromRotationMatrix(rotationMatrix);
+            // const delta = clock.getDelta();
+            // if (!self.quaternion.equals(targetQuaternion)) {
+            //   self.quaternion.rotateTowards(targetQuaternion, 0.4);
+            // }
+          }}
+        >
+          <coneGeometry args={[1, 5]} />
           <meshStandardMaterial color="green" />
         </mesh>
       ))}
-      {/* <mesh position={[-70, 0, 0]}>
-        <boxGeometry args={[10, 10, 10]} />
-        <meshStandardMaterial color="gray" opacity={0.1} />
-      </mesh> */}
     </>
   );
 };
