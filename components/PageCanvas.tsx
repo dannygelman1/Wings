@@ -1,13 +1,20 @@
 import { ReactElement, useRef, useState } from "react";
-import { Canvas, PrimitiveProps } from "@react-three/fiber";
+import { Canvas } from "@react-three/fiber";
 import { Birds } from "./Birds";
 import { BoidConstants } from "./types";
+import * as Slider from "@radix-ui/react-slider";
+import * as Switch from "@radix-ui/react-switch";
+
+import styles from "../styles/radix.module.css";
+import cn from "classnames";
 
 export const PageCanvas = (): ReactElement => {
   const [border, setBorder] = useState<number[]>([300, 180, 240]);
+  const [boxOpacity, setBoxOpacity] = useState<number>(0.4);
+  const [numberBirds, setNumberBirds] = useState<number>(500);
   const [constants, setConstants] = useState<BoidConstants>({
     turnfactor: 0.2,
-    visualRange: 40,
+    visualRange: 30,
     protectedRange: 8,
     centeringFactor: 0.0005,
     avoidFactor: 0.05,
@@ -26,7 +33,12 @@ export const PageCanvas = (): ReactElement => {
           {/* <Environment map={map} background /> */}
           {/* <Geometry /> */}
           {/* <CircleCone /> */}
-          <Birds border={border} boidConstants={constants} />
+          <Birds
+            border={border}
+            boidConstants={constants}
+            boxOpacity={boxOpacity}
+            numberBirds={numberBirds}
+          />
           {/* <primitive
             object={new AxesHelper(10).setColors(
               new Color(1, 1, 1),
@@ -36,104 +48,201 @@ export const PageCanvas = (): ReactElement => {
           /> */}
         </Canvas>
       </div>
-      <div className="absolute">
-        <div className="flex flex-row space-x-2 ">
-          <div
-            className="bg-green-300 select-none cursor-default hover:bg-green-200 active:bg-green-100"
-            onClick={() => setBorder([border[0] + 5, border[1], border[2]])}
-          >
-            X +
-          </div>
-          <div
-            className="bg-red-300 select-none cursor-default hover:bg-red-200 active:bg-red-100"
-            onClick={() => setBorder([border[0] - 5, border[1], border[2]])}
-          >
-            X -
-          </div>
-        </div>
-        <div className="flex flex-row space-x-2">
-          <div
-            className="bg-green-300 select-none cursor-default hover:bg-green-200 active:bg-green-100"
-            onClick={() => setBorder([border[0], border[1] + 5, border[2]])}
-          >
-            Y +
-          </div>
-          <div
-            className="bg-red-300 select-none cursor-default hover:bg-red-200 active:bg-red-100"
-            onClick={() => setBorder([border[0], border[1] - 5, border[2]])}
-          >
-            Y -
-          </div>
-        </div>
-        <div className="flex flex-row space-x-2 ">
-          <div
-            className="bg-green-300 select-none cursor-default hover:bg-green-200 active:bg-green-100"
-            onClick={() => setBorder([border[0], border[1], border[2] + 5])}
-          >
-            Z +
-          </div>
-          <div
-            className="bg-red-300 select-none cursor-default hover:bg-red-200 active:bg-red-100"
-            onClick={() => setBorder([border[0], border[1], border[2] - 5])}
-          >
-            Z -
-          </div>
-        </div>
-        <div className="flex flex-row space-x-2 ">
-          <div
-            className="bg-green-300 select-none cursor-default hover:bg-green-200 active:bg-green-100"
-            onClick={() =>
-              setConstants({
-                ...constants,
-                visualRange: constants.visualRange + 1,
-              })
-            }
-          >
-            visual range +
-          </div>
-          <div
-            className="bg-red-300 select-none cursor-default hover:bg-red-200 active:bg-red-100"
-            onClick={() =>
-              setConstants({
-                ...constants,
-                visualRange: constants.visualRange - 1,
-              })
-            }
-          >
-            visual range -
-          </div>
-          <div className="text-white select-none cursor-default">
-            {constants.visualRange}
-          </div>
-        </div>
-        <div className="flex flex-row space-x-2 ">
-          <div
-            className="bg-green-300 select-none cursor-default hover:bg-green-200 active:bg-green-100"
-            onClick={() =>
-              setConstants({
-                ...constants,
-                protectedRange: constants.protectedRange + 1,
-              })
-            }
-          >
-            protected range +
-          </div>
-          <div
-            className="bg-red-300 select-none cursor-default hover:bg-red-200 active:bg-red-100"
-            onClick={() =>
-              setConstants({
-                ...constants,
-                protectedRange: constants.protectedRange - 1,
-              })
-            }
-          >
-            protected range -
-          </div>
-          <div className="text-white select-none cursor-default">
-            {constants.protectedRange}
-          </div>
-        </div>
+      <div className="absolute flex flex-col space-y-4 ml-4 mt-4">
+        <ConstSlider
+          name="number birds"
+          min={0}
+          max={700}
+          defaultVal={[numberBirds]}
+          step={0.01}
+          onValueChange={(number: number[]) => setNumberBirds(number[0])}
+        />
+        <ConstSlider
+          name="x boundry"
+          min={30}
+          max={300}
+          defaultVal={[border[0]]}
+          step={1}
+          onValueChange={(number: number[]) =>
+            setBorder([number[0], border[1], border[2]])
+          }
+        />
+        <ConstSlider
+          name="y boundry"
+          min={30}
+          max={300}
+          defaultVal={[border[1]]}
+          step={1}
+          onValueChange={(number: number[]) =>
+            setBorder([border[0], number[0], border[2]])
+          }
+        />
+        <ConstSlider
+          name="z boundry"
+          min={30}
+          max={300}
+          defaultVal={[border[2]]}
+          step={1}
+          onValueChange={(number: number[]) =>
+            setBorder([border[0], border[1], number[0]])
+          }
+        />
+        <ConstSlider
+          name="visual range"
+          min={0}
+          max={60}
+          defaultVal={[constants.visualRange]}
+          step={1}
+          onValueChange={(number: number[]) =>
+            setConstants({
+              ...constants,
+              visualRange: number[0],
+            })
+          }
+        />
+        <ConstSlider
+          name="protected range"
+          min={0}
+          max={20}
+          defaultVal={[constants.protectedRange]}
+          step={1}
+          onValueChange={(number: number[]) =>
+            setConstants({
+              ...constants,
+              protectedRange: number[0],
+            })
+          }
+        />
+        <ConstSlider
+          name="centering factor"
+          min={0}
+          max={0.01}
+          defaultVal={[constants.centeringFactor]}
+          step={0.0001}
+          onValueChange={(number: number[]) =>
+            setConstants({
+              ...constants,
+              centeringFactor: number[0],
+            })
+          }
+        />
+        <ConstSlider
+          name="avoid factor"
+          min={0}
+          max={0.1}
+          defaultVal={[constants.avoidFactor]}
+          step={0.001}
+          onValueChange={(number: number[]) =>
+            setConstants({
+              ...constants,
+              avoidFactor: number[0],
+            })
+          }
+        />
+        <ConstSlider
+          name="matching factor"
+          min={0}
+          max={0.1}
+          defaultVal={[constants.matchingFactor]}
+          step={0.001}
+          onValueChange={(number: number[]) =>
+            setConstants({
+              ...constants,
+              matchingFactor: number[0],
+            })
+          }
+        />
+        <ConstSlider
+          name="speed range"
+          min={1}
+          max={6}
+          defaultVal={[constants.minSpeed, constants.maxSpeed]}
+          step={0.1}
+          onValueChange={(number: number[]) =>
+            setConstants({
+              ...constants,
+              minSpeed: number[0],
+              maxSpeed: number[1],
+            })
+          }
+        />
+        <ConstSlider
+          name="box opacity"
+          min={0}
+          max={1}
+          defaultVal={[boxOpacity]}
+          step={0.01}
+          onValueChange={(number: number[]) => setBoxOpacity(number[0])}
+        />
       </div>
     </>
+  );
+};
+
+interface ConstSliderProps {
+  min: number;
+  max: number;
+  defaultVal: number[];
+  step: number;
+  name: string;
+  onValueChange: (value: number[]) => void;
+}
+
+const ConstSlider = ({
+  min,
+  max,
+  defaultVal,
+  step,
+  name,
+  onValueChange,
+}: ConstSliderProps) => {
+  return (
+    <div className="flex flex-col space-y-1">
+      <span className="text-white select-none">{name}</span>
+      <Slider.Root
+        className="relative select-none touch-none flex items-center w-[200px] h-2"
+        minStepsBetweenThumbs={1}
+        defaultValue={defaultVal}
+        min={min}
+        max={max}
+        onValueChange={onValueChange}
+        step={step}
+        aria-label="Volume"
+      >
+        <Slider.Track className="relative bg-white rounded-full h-2 flex-grow">
+          <Slider.Range className="absolute bg-green-500 rounded-full h-full" />
+        </Slider.Track>
+        {defaultVal.map((i) => (
+          <Slider.Thumb
+            key={i}
+            className="block w-5 h-5 bg-green-500 rounded-full outline-none "
+          />
+        ))}
+      </Slider.Root>
+    </div>
+  );
+};
+
+interface ConstSwitchProps {
+  name: string;
+  onCheckedChange: (checked: boolean) => void;
+}
+
+const ConstSwitch = ({ name, onCheckedChange }: ConstSwitchProps) => {
+  return (
+    <div className="flex flex-col space-y-1">
+      <span className="text-white">{name}</span>
+      <Switch.Root
+        className="w-10 h-6 rounded-full bg-white relative"
+        onCheckedChange={onCheckedChange}
+      >
+        <Switch.Thumb
+          className={cn(
+            styles.SwitchThumb,
+            "w-5 h-5 rounded-full bg-green-500 block translate-x-[2px] transition-transform"
+          )}
+        />
+      </Switch.Root>
+    </div>
   );
 };

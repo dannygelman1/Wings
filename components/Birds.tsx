@@ -1,4 +1,4 @@
-import { ReactElement, useEffect, useRef, useState } from "react";
+import { ReactElement, useEffect, useMemo, useRef, useState } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import { PointLight } from "three/src/lights/PointLight";
@@ -7,21 +7,29 @@ import {
   DirectionalLight,
   Vector3,
   MathUtils,
-  Quaternion,
   Mesh,
   ConeGeometry,
+  BoxGeometry,
+  DoubleSide,
 } from "three";
 import { BoidConstants } from "./types";
 
 interface BirdsProps {
   border: number[];
   boidConstants: BoidConstants;
+  boxOpacity: number;
+  numberBirds: number;
 }
-export const Birds = ({ border, boidConstants }: BirdsProps): ReactElement => {
+export const Birds = ({
+  border,
+  boidConstants,
+  boxOpacity,
+  numberBirds,
+}: BirdsProps): ReactElement => {
   const { camera, gl, scene } = useThree();
   const controls = new OrbitControls(camera, gl.domElement);
   controls.enableDamping = true;
-  controls.rotateSpeed = 0.1;
+  controls.rotateSpeed = 0.01;
   controls.zoomSpeed = 0.001;
 
   const pointLight = useRef<PointLight>(null);
@@ -29,6 +37,7 @@ export const Birds = ({ border, boidConstants }: BirdsProps): ReactElement => {
   scene.add(camera);
   if (pointLight.current) camera.add(pointLight.current);
   if (dirLight.current) camera.add(dirLight.current);
+  const boxGeo = useRef<BoxGeometry>(null);
 
   useEffect(() => {
     scene.children.forEach((child) => {
@@ -40,7 +49,6 @@ export const Birds = ({ border, boidConstants }: BirdsProps): ReactElement => {
   useFrame(() => {
     controls.update();
   });
-  const numberBirds = 500;
   const initialBirds = Array.from(Array(numberBirds)).map((i) => [
     MathUtils.randFloat((-1 * border[0]) / 2, border[0] / 2),
     MathUtils.randFloat((-1 * border[1]) / 2, border[1] / 2),
@@ -78,8 +86,14 @@ export const Birds = ({ border, boidConstants }: BirdsProps): ReactElement => {
         castShadow={true}
       />
       <mesh position={[0, 0, 0]}>
-        <boxGeometry args={[border[0], border[1], border[2]]} />
-        <meshStandardMaterial color="gray" opacity={0.3} transparent />
+        <boxGeometry args={[border[0], border[1], border[2]]} ref={boxGeo} />
+        <meshStandardMaterial
+          color="gray"
+          opacity={boxOpacity}
+          transparent
+          wireframeLinejoin={"round"}
+          side={DoubleSide}
+        />
       </mesh>
       {birds.map((bird, i) => (
         <mesh
