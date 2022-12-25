@@ -12,6 +12,7 @@ import {
   BoxGeometry,
   DoubleSide,
 } from "three";
+import floor from "lodash-es/floor";
 import { BoidConstants } from "./types";
 
 interface BirdsProps {
@@ -49,23 +50,66 @@ export const Birds = ({
   useFrame(() => {
     controls.update();
   });
-  const initialBirds = Array.from(Array(numberBirds)).map((i) => [
-    MathUtils.randFloat((-1 * border[0]) / 2, border[0] / 2),
-    MathUtils.randFloat((-1 * border[1]) / 2, border[1] / 2),
-    MathUtils.randFloat((-1 * border[2]) / 2, border[2] / 2),
-    MathUtils.randFloat(-2, 2),
-    MathUtils.randFloat(-2, 2),
-    MathUtils.randFloat(-2, 2),
-    inBiasGroup1(i, numberBirds) || inBiasGroup2(i, numberBirds)
-      ? MathUtils.randFloat(0.00004, 0.01)
-      : 0,
-  ]);
+  const [birds, setBirds] = useState<number[][]>(
+    Array.from(Array(numberBirds)).map((_val, i) => [
+      MathUtils.randFloat((-1 * border[0]) / 2, border[0] / 2),
+      MathUtils.randFloat((-1 * border[1]) / 2, border[1] / 2),
+      MathUtils.randFloat((-1 * border[2]) / 2, border[2] / 2),
+      MathUtils.randFloat(-2, 2),
+      MathUtils.randFloat(-2, 2),
+      MathUtils.randFloat(-2, 2),
+      inBiasGroup1(i, numberBirds) || inBiasGroup2(i, numberBirds)
+        ? MathUtils.randFloat(0.00004, 0.01)
+        : 0,
+      i,
+    ])
+  );
 
-  const [birds, setBirds] = useState<number[][]>(initialBirds);
+  useEffect(() => {
+    const diff = numberBirds - birds.length;
+    if (diff > 0) {
+      Array.from(Array(diff)).forEach(() =>
+        birds.push([
+          MathUtils.randFloat((-1 * border[0]) / 2, border[0] / 2),
+          MathUtils.randFloat((-1 * border[1]) / 2, border[1] / 2),
+          MathUtils.randFloat((-1 * border[2]) / 2, border[2] / 2),
+          MathUtils.randFloat(-2, 2),
+          MathUtils.randFloat(-2, 2),
+          MathUtils.randFloat(-2, 2),
+          0,
+          birds.length,
+        ])
+      );
+    } else {
+      Array.from(Array(-1 * diff)).forEach(() => birds.pop());
+    }
+    setBirds(birds);
+  }, [numberBirds]);
 
   useFrame(() => {
+    const birdMap = new Map<string, number[][]>();
+    const maxRange =
+      Math.max(boidConstants.protectedRange, boidConstants.visualRange) * 2;
     const updateBirds = birds.map((b, i) => {
-      const newPos = move(birds, b, i, border, boidConstants);
+      const key = JSON.stringify([
+        floor(b[0] / maxRange) * maxRange,
+        floor(b[1] / maxRange) * maxRange,
+        floor(b[2] / maxRange) * maxRange,
+      ]);
+
+      if (new Set(Array.from(birdMap.keys())).has(key))
+        birdMap.get(key)?.push(b);
+      else birdMap.set(key, [b]);
+      const bNeighbors = neighbors(
+        [
+          floor(b[0] / maxRange) * maxRange,
+          floor(b[1] / maxRange) * maxRange,
+          floor(b[2] / maxRange) * maxRange,
+        ],
+        maxRange,
+        b
+      );
+      const newPos = move(birds, birdMap, bNeighbors, b, border, boidConstants);
       return newPos;
     });
     setBirds(updateBirds);
@@ -123,8 +167,9 @@ const inBiasGroup2 = (index: number, length: number) =>
 
 const move = (
   birds: number[][],
+  birdMap: Map<string, number[][]>,
+  neighbords: string[],
   bird: number[],
-  bIndex: number,
   bounds: number[],
   boidConsts: BoidConstants
 ): number[] => {
@@ -139,22 +184,26 @@ const move = (
   let closeY = 0;
   let closeZ = 0;
   let neighbors = 0;
-  for (let i = 0; i < birds.length; i++) {
-    if (i !== bIndex) {
-      const birdPos = new Vector3(birds[i][0], birds[i][1], birds[i][2]);
-      if (currentBirdPos.distanceTo(birdPos) < boidConsts.visualRange) {
-        xPos += birds[i][0];
-        yPos += birds[i][1];
-        zPos += birds[i][2];
-        xVel += birds[i][3];
-        yVel += birds[i][4];
-        zVel += birds[i][5];
-        neighbors += 1;
-      }
-      if (currentBirdPos.distanceTo(birdPos) < boidConsts.protectedRange) {
-        closeX += currentBirdPos.x - birdPos.x;
-        closeY += currentBirdPos.y - birdPos.y;
-        closeZ += currentBirdPos.z - birdPos.z;
+
+  for (const neighbor of neighbords) {
+    if (!new Set(Array.from(birdMap.keys())).has(neighbor)) continue;
+    for (const nbirds of birdMap.get(neighbor) || []) {
+      if (nbirds[7] !== bird[7]) {
+        const nBirdPos = new Vector3(nbirds[0], nbirds[1], nbirds[2]);
+        if (currentBirdPos.distanceTo(nBirdPos) < boidConsts.visualRange) {
+          xPos += nbirds[0];
+          yPos += nbirds[1];
+          zPos += nbirds[2];
+          xVel += nbirds[3];
+          yVel += nbirds[4];
+          zVel += nbirds[5];
+          neighbors += 1;
+        }
+        if (currentBirdPos.distanceTo(nBirdPos) < boidConsts.protectedRange) {
+          closeX += currentBirdPos.x - nBirdPos.x;
+          closeY += currentBirdPos.y - nBirdPos.y;
+          closeZ += currentBirdPos.z - nBirdPos.z;
+        }
       }
     }
   }
@@ -186,23 +235,23 @@ const move = (
   if (bird[2] > front) bird[5] -= boidConsts.turnFactor;
   if (bird[2] < back) bird[5] += boidConsts.turnFactor;
 
-  if (inBiasGroup1(bIndex, birds.length)) {
+  if (inBiasGroup1(bird[7], birds.length)) {
     if (bird[3] > 0)
       bird[6] = Math.min(boidConsts.maxBias, bird[6] + boidConsts.biasIncrm);
     else
-      bird[6] = Math.min(boidConsts.biasIncrm, bird[6] - boidConsts.biasIncrm);
+      bird[6] = Math.max(boidConsts.biasIncrm, bird[6] - boidConsts.biasIncrm);
   }
-  if (inBiasGroup2(bIndex, birds.length)) {
+  if (inBiasGroup2(bird[7], birds.length)) {
     if (bird[3] < 0)
       bird[6] = Math.min(boidConsts.maxBias, bird[6] + boidConsts.biasIncrm);
     else
-      bird[6] = Math.min(boidConsts.biasIncrm, bird[6] - boidConsts.biasIncrm);
+      bird[6] = Math.max(boidConsts.biasIncrm, bird[6] - boidConsts.biasIncrm);
   }
 
-  if (inBiasGroup1(bIndex, birds.length)) {
+  if (inBiasGroup1(bird[7], birds.length)) {
     bird[3] = (1 - bird[6]) * bird[3] + bird[6];
   }
-  if (inBiasGroup2(bIndex, birds.length)) {
+  if (inBiasGroup2(bird[7], birds.length)) {
     bird[3] = (1 - bird[6]) * bird[3] - bird[6];
   }
   const speed = (bird[3] ** 2 + bird[4] ** 2 + bird[5] ** 2) ** 0.5;
@@ -222,4 +271,46 @@ const move = (
   bird[2] += bird[5];
 
   return bird;
+};
+
+const neighbors = (
+  birdGrid: number[],
+  gridSize: number,
+  bird: number[]
+): string[] => {
+  const x = bird[0];
+  const y = bird[1];
+  const z = bird[2];
+  const midX = birdGrid[0] + gridSize / 2;
+  const midY = birdGrid[1] + gridSize / 2;
+  const midZ = birdGrid[2] + gridSize / 2;
+  const listNeighbords = [];
+  let newX;
+  let newY;
+  let newZ;
+  if (x < midX) {
+    newX = birdGrid[0] - gridSize;
+  } else {
+    newX = birdGrid[0] + gridSize;
+  }
+  if (y < midY) {
+    newY = birdGrid[1] - gridSize;
+  } else {
+    newY = birdGrid[1] + gridSize;
+  }
+  if (z < midZ) {
+    newZ = birdGrid[2] - gridSize;
+  } else {
+    newZ = birdGrid[2] + gridSize;
+  }
+  listNeighbords.push(JSON.stringify([birdGrid[0], newY, birdGrid[2]]));
+  listNeighbords.push(JSON.stringify([birdGrid[0], newY, newZ]));
+  listNeighbords.push(JSON.stringify([birdGrid[0], birdGrid[1], birdGrid[2]]));
+  listNeighbords.push(JSON.stringify([birdGrid[0], birdGrid[1], newZ]));
+  listNeighbords.push(JSON.stringify([newX, newY, birdGrid[2]]));
+  listNeighbords.push(JSON.stringify([newX, newY, newZ]));
+  listNeighbords.push(JSON.stringify([newX, birdGrid[1], birdGrid[2]]));
+  listNeighbords.push(JSON.stringify([newX, birdGrid[1], newZ]));
+
+  return listNeighbords;
 };

@@ -3,7 +3,6 @@ import { Canvas } from "@react-three/fiber";
 import { Birds } from "./Birds";
 import { BoidConstants } from "./types";
 import * as Slider from "@radix-ui/react-slider";
-import * as Switch from "@radix-ui/react-switch";
 
 import styles from "../styles/radix.module.css";
 import cn from "classnames";
@@ -11,11 +10,11 @@ import cn from "classnames";
 export const PageCanvas = (): ReactElement => {
   const [border, setBorder] = useState<number[]>([300, 180, 240]);
   const [boxOpacity, setBoxOpacity] = useState<number>(0.4);
-  const [numberBirds, setNumberBirds] = useState<number>(500);
+  const [numberBirds, setNumberBirds] = useState<number>(300);
   const [constants, setConstants] = useState<BoidConstants>({
     turnfactor: 0.2,
-    visualRange: 30,
-    protectedRange: 8,
+    visualRange: 40,
+    protectedRange: 4,
     centeringFactor: 0.0005,
     avoidFactor: 0.05,
     matchingFactor: 0.05,
@@ -29,7 +28,17 @@ export const PageCanvas = (): ReactElement => {
   return (
     <>
       <div className="w-full h-full h-grow bg-black absolute">
-        <Canvas shadows={true} camera={{ fov: 50, position: [300, 300, 300] }}>
+        <Canvas
+          shadows={true}
+          camera={{
+            fov: 50,
+            position: [
+              Math.max(border[0], border[1], border[2]),
+              Math.max(border[0], border[1], border[2]),
+              Math.max(border[0], border[1], border[2]),
+            ],
+          }}
+        >
           {/* <Environment map={map} background /> */}
           {/* <Geometry /> */}
           {/* <CircleCone /> */}
@@ -54,7 +63,7 @@ export const PageCanvas = (): ReactElement => {
           min={0}
           max={700}
           defaultVal={[numberBirds]}
-          step={0.01}
+          step={1}
           onValueChange={(number: number[]) => setNumberBirds(number[0])}
         />
         <ConstSlider
@@ -153,6 +162,19 @@ export const PageCanvas = (): ReactElement => {
           }
         />
         <ConstSlider
+          name="turning factor"
+          min={0.1}
+          max={0.5}
+          defaultVal={[constants.turnFactor]}
+          step={0.001}
+          onValueChange={(number: number[]) =>
+            setConstants({
+              ...constants,
+              turnFactor: number[0],
+            })
+          }
+        />
+        <ConstSlider
           name="speed range"
           min={1}
           max={6}
@@ -163,6 +185,20 @@ export const PageCanvas = (): ReactElement => {
               ...constants,
               minSpeed: number[0],
               maxSpeed: number[1],
+            })
+          }
+        />
+        <ConstSlider
+          name="bias range"
+          min={0}
+          max={0.03}
+          defaultVal={[constants.biasIncrm, constants.maxBias]}
+          step={0.00001}
+          onValueChange={(number: number[]) =>
+            setConstants({
+              ...constants,
+              biasIncrm: number[0],
+              maxBias: number[1],
             })
           }
         />
@@ -186,6 +222,7 @@ interface ConstSliderProps {
   step: number;
   name: string;
   onValueChange: (value: number[]) => void;
+  changeOnCommit?: boolean;
 }
 
 const ConstSlider = ({
@@ -205,7 +242,7 @@ const ConstSlider = ({
         defaultValue={defaultVal}
         min={min}
         max={max}
-        onValueChange={onValueChange}
+        onValueCommit={onValueChange}
         step={step}
         aria-label="Volume"
       >
@@ -219,30 +256,6 @@ const ConstSlider = ({
           />
         ))}
       </Slider.Root>
-    </div>
-  );
-};
-
-interface ConstSwitchProps {
-  name: string;
-  onCheckedChange: (checked: boolean) => void;
-}
-
-const ConstSwitch = ({ name, onCheckedChange }: ConstSwitchProps) => {
-  return (
-    <div className="flex flex-col space-y-1">
-      <span className="text-white">{name}</span>
-      <Switch.Root
-        className="w-10 h-6 rounded-full bg-white relative"
-        onCheckedChange={onCheckedChange}
-      >
-        <Switch.Thumb
-          className={cn(
-            styles.SwitchThumb,
-            "w-5 h-5 rounded-full bg-green-500 block translate-x-[2px] transition-transform"
-          )}
-        />
-      </Switch.Root>
     </div>
   );
 };
