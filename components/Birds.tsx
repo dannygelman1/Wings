@@ -35,7 +35,7 @@ export const Birds = ({
   const controls = new OrbitControls(camera, gl.domElement);
   controls.enableDamping = true;
   controls.rotateSpeed = 0.01;
-  controls.zoomSpeed = 0;
+  controls.zoomSpeed = 0.001;
 
   const pointLight = useRef<PointLight>(null);
   const dirLight = useRef<DirectionalLight>(null);
@@ -50,6 +50,7 @@ export const Birds = ({
         child.geometry?.rotateX(Math.PI / 2);
     });
   }, []);
+  const maxPerchingTime = 10;
 
   const [birds, setBirds] = useState<number[][]>(
     Array.from(Array(numberBirds)).map((_val, i) => [
@@ -63,6 +64,9 @@ export const Birds = ({
         ? MathUtils.randFloat(0.00004, 0.01)
         : 0,
       i,
+      0,
+      MathUtils.randFloat(maxPerchingTime / 3.0, maxPerchingTime),
+      0,
     ])
   );
   const [birdNum, setBirdNum] = useState<number>(numberBirds);
@@ -97,6 +101,9 @@ export const Birds = ({
           MathUtils.randFloat(-2, 2),
           0,
           birds.length,
+          0,
+          MathUtils.randFloat(maxPerchingTime / 3.0, maxPerchingTime), // random perch duration
+          0, // time stamp that bird perched
         ])
       );
     } else {
@@ -115,6 +122,16 @@ export const Birds = ({
     });
     setBirdNum(scene.children.length);
   }, [numberBirds, scene.children.length]);
+
+  const setNewBird = (bird: number[]) => {
+    setBirds(
+      birds.map((b) => {
+        if (b[7] === bird[7]) {
+          return bird;
+        } else return b;
+      })
+    );
+  };
 
   useFrame((state) => {
     controls.update();
@@ -142,13 +159,17 @@ export const Birds = ({
       );
       const time = state.clock.getElapsedTime();
 
-      if (floor(time) % 10 === 0 && timeInterval !== floor(time)) {
+      if (floor(time) % maxPerchingTime === 0 && timeInterval !== floor(time)) {
         setRandomNum(MathUtils.randInt(15, 40));
         setTimeInterval(floor(time));
       }
 
-      if (b[7] % randomNum === 0 && b[7] !== 0) {
-        const newPos = moveToPerch(birds, b, boidConstants);
+      if (
+        b[7] % randomNum === 0 &&
+        b[7] !== 0 &&
+        (time < b[9] + b[10] || b[10] === 0)
+      ) {
+        const newPos = moveToPerch(birds, b, boidConstants, time);
         return newPos;
       } else {
         const newPos = move(
@@ -203,10 +224,29 @@ export const Birds = ({
             );
           }}
         >
-          <coneGeometry args={[1, 5]} />
-          <meshStandardMaterial
-            color={bird[7] % randomNum === 0 ? "blue" : "red"}
+          <coneGeometry
+            args={[1, 5]}
+            onUpdate={(self) => {
+              const currentBirdPos = new Vector3(bird[0], bird[1], bird[2]);
+              const pointOnPerch = new Vector3(
+                (bird[7] / birds.length) * 100,
+                -100,
+                0
+              );
+              const dist = currentBirdPos.distanceTo(pointOnPerch);
+              if (bird[8] === 2 && dist > 5) {
+                self.rotateX(Math.PI / 2);
+                bird[8] = 0;
+                setNewBird(bird);
+              }
+              if (bird[7] % randomNum === 0 && bird[8] === 1) {
+                self.rotateX(-Math.PI / 2);
+                bird[8] = 2;
+                setNewBird(bird);
+              }
+            }}
           />
+          <meshStandardMaterial color={"blue"} />
         </mesh>
       ))}
     </>
@@ -342,10 +382,11 @@ const move = (
 const moveToPerch = (
   birds: number[][],
   bird: number[],
-  boidConsts: BoidConstants
+  boidConsts: BoidConstants,
+  time: number
 ) => {
   const currentBirdPos = new Vector3(bird[0], bird[1], bird[2]);
-  const pointOnPerch = new Vector3((bird[7] / birds.length) * 100, -200, 0);
+  const pointOnPerch = new Vector3((bird[7] / birds.length) * 100, -100, 0);
   const dist = currentBirdPos.distanceTo(pointOnPerch);
 
   if (dist > 2 && bird[3] !== 0 && bird[4] !== 0 && bird[5] !== 0) {
@@ -369,6 +410,10 @@ const moveToPerch = (
     bird[3] = 0;
     bird[4] = 0;
     bird[5] = 0;
+    if (bird[8] === 0) {
+      bird[8] = 1;
+      bird[10] = time;
+    }
   }
 
   return bird;
