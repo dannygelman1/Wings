@@ -3,9 +3,7 @@ import { Canvas } from "@react-three/fiber";
 import { Birds } from "./Birds";
 import { BoidConstants } from "./types";
 import * as Slider from "@radix-ui/react-slider";
-
-import styles from "../styles/radix.module.css";
-import cn from "classnames";
+import { AxesHelper, Color } from "three";
 
 export const PageCanvas = (): ReactElement => {
   const [border, setBorder] = useState<number[]>([300, 180, 240]);
@@ -26,38 +24,8 @@ export const PageCanvas = (): ReactElement => {
   });
 
   return (
-    <>
-      <div className="w-full h-full h-grow bg-black absolute">
-        <Canvas
-          shadows={true}
-          camera={{
-            fov: 50,
-            position: [
-              Math.max(border[0], border[1], border[2]),
-              Math.max(border[0], border[1], border[2]),
-              Math.max(border[0], border[1], border[2]),
-            ],
-          }}
-        >
-          {/* <Environment map={map} background /> */}
-          {/* <Geometry /> */}
-          {/* <CircleCone /> */}
-          <Birds
-            border={border}
-            boidConstants={constants}
-            boxOpacity={boxOpacity}
-            numberBirds={numberBirds}
-          />
-          {/* <primitive
-            object={new AxesHelper(10).setColors(
-              new Color(1, 1, 1),
-              new Color(1, 0, 0),
-              new Color(0, 1, 0)
-            )}
-          /> */}
-        </Canvas>
-      </div>
-      <div className="absolute flex flex-col space-y-4 ml-4 mt-4">
+    <div className="flex flex-row items-center bg-black space-x-4 h-full w-full absolute">
+      <div className="flex flex-col space-y-4 ml-4 mt-4">
         <ConstSlider
           name="number birds"
           min={0}
@@ -211,7 +179,34 @@ export const PageCanvas = (): ReactElement => {
           onValueChange={(number: number[]) => setBoxOpacity(number[0])}
         />
       </div>
-    </>
+      <div className="w-4/5 h-[700px] bg-black">
+        <Canvas
+          shadows={true}
+          camera={{
+            fov: 75,
+            position: [0, 0, Math.max(border[0], border[1], border[2])],
+          }}
+          className="bg-blue-400"
+        >
+          {/* <Environment map={map} background /> */}
+          {/* <Geometry /> */}
+          {/* <CircleCone /> */}
+          <Birds
+            border={border}
+            boidConstants={constants}
+            boxOpacity={boxOpacity}
+            numberBirds={numberBirds}
+          />
+          {/* <primitive
+            object={new AxesHelper(10).setColors(
+              new Color(1, 1, 1),
+              new Color(1, 0, 0),
+              new Color(0, 1, 0)
+            )}
+          /> */}
+        </Canvas>
+      </div>
+    </div>
   );
 };
 

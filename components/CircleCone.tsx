@@ -20,7 +20,7 @@ import { Euler } from "three";
 
 export const CircleCone = (): ReactElement => {
   const { camera, gl, scene } = useThree();
-  console.log(useThree());
+
   const controls = new OrbitControls(camera, gl.domElement);
   controls.enableDamping = true;
   controls.rotateSpeed = 0.5;
@@ -58,7 +58,6 @@ export const CircleCone = (): ReactElement => {
   // scene.add(mesh);
 
   useFrame((state, delta, xFrame) => {
-    // console.log(state.clock.getElapsedTime());
     // if (state.clock.getElapsedTime() < 0.01) {
     //   mesh.current?.rotateX(Math.PI / 2);
     // }

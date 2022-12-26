@@ -11,11 +11,13 @@ import {
   ConeGeometry,
   BoxGeometry,
   DoubleSide,
+  EllipseCurve,
   Quaternion,
 } from "three";
 import floor from "lodash-es/floor";
 import { BoidConstants } from "./types";
 import { MeshStandardMaterial } from "three";
+import { AnimationMixer } from "three";
 
 interface BirdsProps {
   border: number[];
@@ -33,7 +35,7 @@ export const Birds = ({
   const controls = new OrbitControls(camera, gl.domElement);
   controls.enableDamping = true;
   controls.rotateSpeed = 0.01;
-  controls.zoomSpeed = 0.001;
+  controls.zoomSpeed = 0;
 
   const pointLight = useRef<PointLight>(null);
   const dirLight = useRef<DirectionalLight>(null);
@@ -64,21 +66,23 @@ export const Birds = ({
     ])
   );
   const [birdNum, setBirdNum] = useState<number>(numberBirds);
+  const [mousePos, setMousePos] = useState<number[]>([0, 0, 0]);
 
-  // useEffect(() => {
-  //   birds.map((bird, i) => {
-  //     const birdmesh = new Mesh(
-  //       new ConeGeometry(1, 5),
-  //       new MeshStandardMaterial({ color: "green" })
-  //     );
-  //     birdmesh.position.set(bird[0], bird[1], bird[2]);
-  //     birdmesh.geometry.rotateX(Math.PI / 2);
-  //     birdmesh.lookAt(
-  //       new Vector3(bird[0] + bird[3], bird[1] + bird[4], bird[2] + bird[5])
-  //     );
-  //     scene.add(birdmesh);
-  //   });
-  // }, [numberBirds]);
+  const [randomNum, setRandomNum] = useState<number>(MathUtils.randInt(15, 40));
+  const [timeInterval, setTimeInterval] = useState<number>(0);
+
+  useEffect(() => {
+    const mouseMove = (event: MouseEvent) => {
+      const x =
+        ((event.clientX - 230) / gl.domElement.clientWidth - 0.5) *
+        gl.domElement.clientWidth;
+      const y =
+        -((event.clientY - 30) / gl.domElement.clientHeight - 0.5) *
+        gl.domElement.clientHeight;
+      setMousePos([x, y, 0]);
+    };
+    gl.domElement.addEventListener("mousemove", mouseMove);
+  }, []);
 
   useEffect(() => {
     const diff = numberBirds - birds.length;
@@ -112,7 +116,7 @@ export const Birds = ({
     setBirdNum(scene.children.length);
   }, [numberBirds, scene.children.length]);
 
-  useFrame(() => {
+  useFrame((state) => {
     controls.update();
     const birdMap = new Map<string, number[][]>();
     const maxRange =
@@ -136,8 +140,29 @@ export const Birds = ({
         maxRange,
         b
       );
-      const newPos = move(birds, birdMap, bNeighbors, b, border, boidConstants);
-      return newPos;
+      const time = state.clock.getElapsedTime();
+
+      if (floor(time) % 10 === 0 && timeInterval !== floor(time)) {
+        setRandomNum(MathUtils.randInt(15, 40));
+        setTimeInterval(floor(time));
+      }
+
+      if (b[7] % randomNum === 0 && b[7] !== 0) {
+        const newPos = moveToPerch(birds, b, boidConstants);
+        return newPos;
+      } else {
+        const newPos = move(
+          birds,
+          birdMap,
+          bNeighbors,
+          b,
+          border,
+          boidConstants,
+          mousePos,
+          state.clock.getElapsedTime()
+        );
+        return newPos;
+      }
     });
     setBirds(updateBirds);
   });
@@ -150,22 +175,19 @@ export const Birds = ({
         intensity={0.1}
         color={new Color(90, 60, 0)}
       />
-      <directionalLight
-        ref={dirLight}
-        position={[0, 4, 0]}
-        intensity={0.5}
-        castShadow={true}
-      />
       <mesh position={[0, 0, 0]}>
         <boxGeometry args={[border[0], border[1], border[2]]} ref={boxGeo} />
         <meshStandardMaterial
           color="gray"
           opacity={boxOpacity}
           transparent
-          wireframeLinejoin={"round"}
           side={DoubleSide}
         />
       </mesh>
+      {/* <mesh position={[mousePos[0], mousePos[1], mousePos[2]]}>
+        <boxGeometry args={[40, 40, 40]} />
+        <meshStandardMaterial color="red" side={DoubleSide} />
+      </mesh> */}
       {birds.map((bird, i) => (
         <mesh
           name={bird[7].toString()}
@@ -182,7 +204,9 @@ export const Birds = ({
           }}
         >
           <coneGeometry args={[1, 5]} />
-          <meshStandardMaterial color={"green"} />
+          <meshStandardMaterial
+            color={bird[7] % randomNum === 0 ? "blue" : "red"}
+          />
         </mesh>
       ))}
     </>
@@ -199,7 +223,9 @@ const move = (
   neighbords: string[],
   bird: number[],
   bounds: number[],
-  boidConsts: BoidConstants
+  boidConsts: BoidConstants,
+  mousePos: number[],
+  time: number
 ): number[] => {
   const currentBirdPos = new Vector3(bird[0], bird[1], bird[2]);
   let xPos = 0;
@@ -211,6 +237,9 @@ const move = (
   let closeX = 0;
   let closeY = 0;
   let closeZ = 0;
+  let mouseX = 0;
+  let mouseY = 0;
+  let mouseZ = 0;
   let neighbors = 0;
 
   for (const neighbor of neighbords) {
@@ -218,6 +247,12 @@ const move = (
     for (const nbirds of birdMap.get(neighbor) || []) {
       if (nbirds[7] !== bird[7]) {
         const nBirdPos = new Vector3(nbirds[0], nbirds[1], nbirds[2]);
+        // const mouseP = new Vector3(mousePos[0], mousePos[1], mousePos[2]);
+        // if (currentBirdPos.distanceTo(mouseP) < boidConsts.visualRange) {
+        //   mouseX = mouseP.x - currentBirdPos.x;
+        //   mouseY = mouseP.y - currentBirdPos.y;
+        //   mouseZ = -currentBirdPos.z;
+        // }
         if (currentBirdPos.distanceTo(nBirdPos) < boidConsts.visualRange) {
           xPos += nbirds[0];
           yPos += nbirds[1];
@@ -237,12 +272,15 @@ const move = (
   }
   if (neighbors > 0) {
     bird[3] +=
+      // mouseX * 0.01 +
       (xPos / neighbors - bird[0]) * boidConsts.centeringFactor +
       (xVel / neighbors - bird[3]) * boidConsts.matchingFactor;
     bird[4] +=
+      // mouseY * 0.01 +
       (yPos / neighbors - bird[1]) * boidConsts.centeringFactor +
       (yVel / neighbors - bird[4]) * boidConsts.matchingFactor;
     bird[5] +=
+      // mouseZ * 0.01 +
       (zPos / neighbors - bird[2]) * boidConsts.centeringFactor +
       (zVel / neighbors - bird[5]) * boidConsts.matchingFactor;
   }
@@ -297,6 +335,41 @@ const move = (
   bird[0] += bird[3];
   bird[1] += bird[4];
   bird[2] += bird[5];
+
+  return bird;
+};
+
+const moveToPerch = (
+  birds: number[][],
+  bird: number[],
+  boidConsts: BoidConstants
+) => {
+  const currentBirdPos = new Vector3(bird[0], bird[1], bird[2]);
+  const pointOnPerch = new Vector3((bird[7] / birds.length) * 100, -200, 0);
+  const dist = currentBirdPos.distanceTo(pointOnPerch);
+
+  if (dist > 2 && bird[3] !== 0 && bird[4] !== 0 && bird[5] !== 0) {
+    bird[3] += (pointOnPerch.x - currentBirdPos.x) * dist;
+    bird[4] += (pointOnPerch.y - currentBirdPos.y) * dist;
+    bird[5] += (pointOnPerch.z - currentBirdPos.z) * dist;
+
+    const speed = (bird[3] ** 2 + bird[4] ** 2 + bird[5] ** 2) ** 0.5;
+    if (speed > boidConsts.maxSpeed) {
+      bird[3] = (bird[3] / speed) * boidConsts.maxSpeed;
+      bird[4] = (bird[4] / speed) * boidConsts.maxSpeed;
+      bird[5] = (bird[5] / speed) * boidConsts.maxSpeed;
+    }
+    bird[0] += bird[3];
+    bird[1] += bird[4];
+    bird[2] += bird[5];
+  } else {
+    bird[0] = pointOnPerch.x;
+    bird[1] = pointOnPerch.y;
+    bird[2] = pointOnPerch.z;
+    bird[3] = 0;
+    bird[4] = 0;
+    bird[5] = 0;
+  }
 
   return bird;
 };
