@@ -11,9 +11,11 @@ import {
   ConeGeometry,
   BoxGeometry,
   DoubleSide,
+  Quaternion,
 } from "three";
 import floor from "lodash-es/floor";
 import { BoidConstants } from "./types";
+import { MeshStandardMaterial } from "three";
 
 interface BirdsProps {
   border: number[];
@@ -47,9 +49,6 @@ export const Birds = ({
     });
   }, []);
 
-  useFrame(() => {
-    controls.update();
-  });
   const [birds, setBirds] = useState<number[][]>(
     Array.from(Array(numberBirds)).map((_val, i) => [
       MathUtils.randFloat((-1 * border[0]) / 2, border[0] / 2),
@@ -64,6 +63,22 @@ export const Birds = ({
       i,
     ])
   );
+  const [birdNum, setBirdNum] = useState<number>(numberBirds);
+
+  // useEffect(() => {
+  //   birds.map((bird, i) => {
+  //     const birdmesh = new Mesh(
+  //       new ConeGeometry(1, 5),
+  //       new MeshStandardMaterial({ color: "green" })
+  //     );
+  //     birdmesh.position.set(bird[0], bird[1], bird[2]);
+  //     birdmesh.geometry.rotateX(Math.PI / 2);
+  //     birdmesh.lookAt(
+  //       new Vector3(bird[0] + bird[3], bird[1] + bird[4], bird[2] + bird[5])
+  //     );
+  //     scene.add(birdmesh);
+  //   });
+  // }, [numberBirds]);
 
   useEffect(() => {
     const diff = numberBirds - birds.length;
@@ -84,9 +99,21 @@ export const Birds = ({
       Array.from(Array(-1 * diff)).forEach(() => birds.pop());
     }
     setBirds(birds);
-  }, [numberBirds]);
+    scene.children.forEach((child, i) => {
+      if (child instanceof Mesh && child.geometry instanceof ConeGeometry)
+        if (
+          child instanceof Mesh &&
+          child.geometry instanceof ConeGeometry &&
+          parseInt(child.name) > birdNum
+        ) {
+          child.geometry?.rotateX(Math.PI / 2);
+        }
+    });
+    setBirdNum(scene.children.length);
+  }, [numberBirds, scene.children.length]);
 
   useFrame(() => {
+    controls.update();
     const birdMap = new Map<string, number[][]>();
     const maxRange =
       Math.max(boidConstants.protectedRange, boidConstants.visualRange) * 2;
@@ -141,6 +168,7 @@ export const Birds = ({
       </mesh>
       {birds.map((bird, i) => (
         <mesh
+          name={bird[7].toString()}
           key={i}
           position={[bird[0], bird[1], bird[2]]}
           onUpdate={(self) => {
@@ -154,7 +182,7 @@ export const Birds = ({
           }}
         >
           <coneGeometry args={[1, 5]} />
-          <meshStandardMaterial color="green" />
+          <meshStandardMaterial color={"green"} />
         </mesh>
       ))}
     </>
