@@ -7,7 +7,7 @@ import { AxesHelper, Color } from "three";
 
 export const PageCanvas = (): ReactElement => {
   const [border, setBorder] = useState<number[]>([300, 180, 240]);
-  const [boxOpacity, setBoxOpacity] = useState<number>(0.4);
+  const [boxOpacity, setBoxOpacity] = useState<number>(0);
   const [numberBirds, setNumberBirds] = useState<number>(300);
   const [constants, setConstants] = useState<BoidConstants>({
     turnfactor: 0.2,

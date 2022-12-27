@@ -12,12 +12,11 @@ import {
   BoxGeometry,
   DoubleSide,
   EllipseCurve,
-  Quaternion,
+  Euler,
 } from "three";
 import floor from "lodash-es/floor";
 import { BoidConstants } from "./types";
-import { MeshStandardMaterial } from "three";
-import { AnimationMixer } from "three";
+import { Line } from "@react-three/drei";
 
 interface BirdsProps {
   border: number[];
@@ -37,6 +36,12 @@ export const Birds = ({
   controls.rotateSpeed = 0.01;
   controls.zoomSpeed = 0.001;
 
+  controls.target.set(0, 0, 0);
+  camera.position.set(camera.position.x, 0, camera.position.z);
+  camera.lookAt(controls.target);
+  controls.minPolarAngle = 0;
+  controls.maxPolarAngle = 180;
+  controls.target.set(0, 0, 0);
   const pointLight = useRef<PointLight>(null);
   const dirLight = useRef<DirectionalLight>(null);
   scene.add(camera);
@@ -65,8 +70,9 @@ export const Birds = ({
         : 0,
       i,
       0,
-      MathUtils.randFloat(maxPerchingTime / 3.0, maxPerchingTime),
-      0,
+      MathUtils.randFloat(maxPerchingTime / 3.0, maxPerchingTime), // random perch duration
+      0, // time stamp that bird perched
+      -1, // determines which perch
     ])
   );
   const [birdNum, setBirdNum] = useState<number>(numberBirds);
@@ -102,8 +108,9 @@ export const Birds = ({
           0,
           birds.length,
           0,
-          MathUtils.randFloat(maxPerchingTime / 3.0, maxPerchingTime), // random perch duration
-          0, // time stamp that bird perched
+          MathUtils.randFloat(maxPerchingTime / 3.0, maxPerchingTime),
+          0,
+          -1,
         ])
       );
     } else {
@@ -228,11 +235,43 @@ export const Birds = ({
             args={[1, 5]}
             onUpdate={(self) => {
               const currentBirdPos = new Vector3(bird[0], bird[1], bird[2]);
-              const pointOnPerch = new Vector3(
-                (bird[7] / birds.length) * 100,
-                -100,
-                0
-              );
+              let pointOnPerch;
+              if (bird[11] === 0)
+                pointOnPerch = new Vector3(
+                  50 *
+                    Math.cos(
+                      -(Math.PI - (2 * Math.PI) / 8) *
+                        (bird[7] / birds.length) -
+                        Math.PI / 8
+                    ),
+                  -148 +
+                    10 *
+                      Math.sin(
+                        -(Math.PI - (2 * Math.PI) / 8) *
+                          (bird[7] / birds.length) -
+                          Math.PI / 8
+                      ),
+                  0
+                );
+              else {
+                const rotation = new Euler(0, Math.PI / 3, 0);
+                pointOnPerch = new Vector3(
+                  150 *
+                    Math.cos(
+                      -(Math.PI - (2 * Math.PI) / 8) *
+                        (bird[7] / birds.length) -
+                        Math.PI / 8
+                    ),
+                  -98 +
+                    40 *
+                      Math.sin(
+                        -(Math.PI - (2 * Math.PI) / 8) *
+                          (bird[7] / birds.length) -
+                          Math.PI / 8
+                      ),
+                  0
+                ).applyEuler(rotation);
+              }
               const dist = currentBirdPos.distanceTo(pointOnPerch);
               if (bird[8] === 2 && dist > 5) {
                 self.rotateX(Math.PI / 2);
@@ -249,6 +288,35 @@ export const Birds = ({
           <meshStandardMaterial color={"blue"} />
         </mesh>
       ))}
+      <Line
+        points={new EllipseCurve(
+          0,
+          -150, // ax, aY
+          50,
+          10, // xRadius, yRadius
+          Math.PI + Math.PI / 8,
+          0 - Math.PI / 8, // aStartAngle, aEndAngle
+          false, // aClockwise
+          0 // aRotation
+        ).getPoints(50)}
+        color="blue"
+        lineWidth={1}
+      />
+      <Line
+        points={new EllipseCurve(
+          0,
+          -100, // ax, aY
+          150,
+          40, // xRadius, yRadius
+          Math.PI + Math.PI / 8,
+          0 - Math.PI / 8, // aStartAngle, aEndAngle
+          false, // aClockwise
+          0 // aRotation
+        ).getPoints(50)}
+        color="blue"
+        lineWidth={1}
+        rotation={new Euler(0, Math.PI / 3, 0)}
+      />
     </>
   );
 };
@@ -385,8 +453,43 @@ const moveToPerch = (
   boidConsts: BoidConstants,
   time: number
 ) => {
+  let randomNum;
+  if (bird[11] === -1) randomNum = MathUtils.randInt(0, 1);
+  else randomNum = bird[11];
   const currentBirdPos = new Vector3(bird[0], bird[1], bird[2]);
-  const pointOnPerch = new Vector3((bird[7] / birds.length) * 100, -100, 0);
+  let pointOnPerch;
+  if (randomNum === 0)
+    pointOnPerch = new Vector3(
+      50 *
+        Math.cos(
+          -(Math.PI - (2 * Math.PI) / 8) * (bird[7] / birds.length) -
+            Math.PI / 8
+        ),
+      -148 +
+        10 *
+          Math.sin(
+            -(Math.PI - (2 * Math.PI) / 8) * (bird[7] / birds.length) -
+              Math.PI / 8
+          ),
+      0
+    );
+  else {
+    const rotation = new Euler(0, Math.PI / 3, 0);
+    pointOnPerch = new Vector3(
+      150 *
+        Math.cos(
+          -(Math.PI - (2 * Math.PI) / 8) * (bird[7] / birds.length) -
+            Math.PI / 8
+        ),
+      -98 +
+        40 *
+          Math.sin(
+            -(Math.PI - (2 * Math.PI) / 8) * (bird[7] / birds.length) -
+              Math.PI / 8
+          ),
+      0
+    ).applyEuler(rotation);
+  }
   const dist = currentBirdPos.distanceTo(pointOnPerch);
 
   if (dist > 2 && bird[3] !== 0 && bird[4] !== 0 && bird[5] !== 0) {
@@ -415,6 +518,7 @@ const moveToPerch = (
       bird[10] = time;
     }
   }
+  bird[11] = randomNum;
 
   return bird;
 };
