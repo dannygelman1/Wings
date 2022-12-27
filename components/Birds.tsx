@@ -15,8 +15,9 @@ import {
   Euler,
 } from "three";
 import floor from "lodash-es/floor";
-import { BoidConstants } from "./types";
+import { BirdAction, BoidConstants } from "./types";
 import { Line } from "@react-three/drei";
+import { Bird } from "../models/Bird";
 
 interface BirdsProps {
   border: number[];
@@ -57,24 +58,29 @@ export const Birds = ({
   }, []);
   const maxPerchingTime = 10;
 
-  const [birds, setBirds] = useState<number[][]>(
-    Array.from(Array(numberBirds)).map((_val, i) => [
-      MathUtils.randFloat((-1 * border[0]) / 2, border[0] / 2),
-      MathUtils.randFloat((-1 * border[1]) / 2, border[1] / 2),
-      MathUtils.randFloat((-1 * border[2]) / 2, border[2] / 2),
-      MathUtils.randFloat(-2, 2),
-      MathUtils.randFloat(-2, 2),
-      MathUtils.randFloat(-2, 2),
-      inBiasGroup1(i, numberBirds) || inBiasGroup2(i, numberBirds)
-        ? MathUtils.randFloat(0.00004, 0.01)
-        : 0,
-      i,
-      0,
-      MathUtils.randFloat(maxPerchingTime / 3.0, maxPerchingTime), // random perch duration
-      0, // time stamp that bird perched
-      -1, // determines which perch
-    ])
+  const [birds, setBirds] = useState<Bird[]>(
+    Array.from(Array(numberBirds)).map(
+      (_val, i) =>
+        new Bird({
+          x: MathUtils.randFloat((-1 * border[0]) / 2, border[0] / 2),
+          y: MathUtils.randFloat((-1 * border[1]) / 2, border[1] / 2),
+          z: MathUtils.randFloat((-1 * border[2]) / 2, border[2] / 2),
+          vx: MathUtils.randFloat(-2, 2),
+          vy: MathUtils.randFloat(-2, 2),
+          vz: MathUtils.randFloat(-2, 2),
+          bias:
+            inBiasGroup1(i, numberBirds) || inBiasGroup2(i, numberBirds)
+              ? MathUtils.randFloat(0.00004, 0.01)
+              : 0,
+          id: i,
+          action: BirdAction.FLYING,
+          perchDur: MathUtils.randFloat(maxPerchingTime / 3.0, maxPerchingTime), // random perch duration
+          perchedAt: 0, // time stamp that bird perched
+          perchLoc: -1, // determines which perch
+        })
+    )
   );
+
   const [birdNum, setBirdNum] = useState<number>(numberBirds);
   const [mousePos, setMousePos] = useState<number[]>([0, 0, 0]);
 
@@ -98,20 +104,25 @@ export const Birds = ({
     const diff = numberBirds - birds.length;
     if (diff > 0) {
       Array.from(Array(diff)).forEach(() =>
-        birds.push([
-          MathUtils.randFloat((-1 * border[0]) / 2, border[0] / 2),
-          MathUtils.randFloat((-1 * border[1]) / 2, border[1] / 2),
-          MathUtils.randFloat((-1 * border[2]) / 2, border[2] / 2),
-          MathUtils.randFloat(-2, 2),
-          MathUtils.randFloat(-2, 2),
-          MathUtils.randFloat(-2, 2),
-          0,
-          birds.length,
-          0,
-          MathUtils.randFloat(maxPerchingTime / 3.0, maxPerchingTime),
-          0,
-          -1,
-        ])
+        birds.push(
+          new Bird({
+            x: MathUtils.randFloat((-1 * border[0]) / 2, border[0] / 2),
+            y: MathUtils.randFloat((-1 * border[1]) / 2, border[1] / 2),
+            z: MathUtils.randFloat((-1 * border[2]) / 2, border[2] / 2),
+            vx: MathUtils.randFloat(-2, 2),
+            vy: MathUtils.randFloat(-2, 2),
+            vz: MathUtils.randFloat(-2, 2),
+            bias: 0,
+            id: birds.length,
+            action: BirdAction.FLYING,
+            perchDur: MathUtils.randFloat(
+              maxPerchingTime / 3.0,
+              maxPerchingTime
+            ), // random perch duration
+            perchedAt: 0, // time stamp that bird perched
+            perchLoc: -1, // determines which perch
+          })
+        )
       );
     } else {
       Array.from(Array(-1 * diff)).forEach(() => birds.pop());
@@ -130,10 +141,10 @@ export const Birds = ({
     setBirdNum(scene.children.length);
   }, [numberBirds, scene.children.length]);
 
-  const setNewBird = (bird: number[]) => {
+  const setNewBird = (bird: Bird) => {
     setBirds(
       birds.map((b) => {
-        if (b[7] === bird[7]) {
+        if (b.id === bird.id) {
           return bird;
         } else return b;
       })
@@ -142,14 +153,14 @@ export const Birds = ({
 
   useFrame((state) => {
     controls.update();
-    const birdMap = new Map<string, number[][]>();
+    const birdMap = new Map<string, Bird[]>();
     const maxRange =
       Math.max(boidConstants.protectedRange, boidConstants.visualRange) * 2;
     const updateBirds = birds.map((b, i) => {
       const key = JSON.stringify([
-        floor(b[0] / maxRange) * maxRange,
-        floor(b[1] / maxRange) * maxRange,
-        floor(b[2] / maxRange) * maxRange,
+        floor(b.x / maxRange) * maxRange,
+        floor(b.y / maxRange) * maxRange,
+        floor(b.z / maxRange) * maxRange,
       ]);
 
       if (new Set(Array.from(birdMap.keys())).has(key))
@@ -157,9 +168,9 @@ export const Birds = ({
       else birdMap.set(key, [b]);
       const bNeighbors = neighbors(
         [
-          floor(b[0] / maxRange) * maxRange,
-          floor(b[1] / maxRange) * maxRange,
-          floor(b[2] / maxRange) * maxRange,
+          floor(b.x / maxRange) * maxRange,
+          floor(b.y / maxRange) * maxRange,
+          floor(b.z / maxRange) * maxRange,
         ],
         maxRange,
         b
@@ -172,9 +183,9 @@ export const Birds = ({
       }
 
       if (
-        b[7] % randomNum === 0 &&
-        b[7] !== 0 &&
-        (time < b[9] + b[10] || b[10] === 0)
+        b.id % randomNum === 0 &&
+        b.id !== 0 &&
+        (time < b.perchedAt + b.perchDur || b.perchedAt === 0)
       ) {
         const newPos = moveToPerch(birds, b, boidConstants, time);
         return newPos;
@@ -218,37 +229,33 @@ export const Birds = ({
       </mesh> */}
       {birds.map((bird, i) => (
         <mesh
-          name={bird[7].toString()}
+          name={bird.id.toString()}
           key={i}
-          position={[bird[0], bird[1], bird[2]]}
+          position={[bird.x, bird.y, bird.z]}
           onUpdate={(self) => {
             self.lookAt(
-              new Vector3(
-                bird[0] + bird[3],
-                bird[1] + bird[4],
-                bird[2] + bird[5]
-              )
+              new Vector3(bird.x + bird.vx, bird.y + bird.vy, bird.z + bird.vz)
             );
           }}
         >
           <coneGeometry
             args={[1, 5]}
             onUpdate={(self) => {
-              const currentBirdPos = new Vector3(bird[0], bird[1], bird[2]);
+              const currentBirdPos = new Vector3(bird.x, bird.y, bird.z);
               let pointOnPerch;
-              if (bird[11] === 0)
+              if (bird.perchLoc === 0)
                 pointOnPerch = new Vector3(
                   50 *
                     Math.cos(
                       -(Math.PI - (2 * Math.PI) / 8) *
-                        (bird[7] / birds.length) -
+                        (bird.id / birds.length) -
                         Math.PI / 8
                     ),
                   -148 +
                     10 *
                       Math.sin(
                         -(Math.PI - (2 * Math.PI) / 8) *
-                          (bird[7] / birds.length) -
+                          (bird.id / birds.length) -
                           Math.PI / 8
                       ),
                   0
@@ -259,28 +266,31 @@ export const Birds = ({
                   150 *
                     Math.cos(
                       -(Math.PI - (2 * Math.PI) / 8) *
-                        (bird[7] / birds.length) -
+                        (bird.id / birds.length) -
                         Math.PI / 8
                     ),
                   -98 +
                     40 *
                       Math.sin(
                         -(Math.PI - (2 * Math.PI) / 8) *
-                          (bird[7] / birds.length) -
+                          (bird.id / birds.length) -
                           Math.PI / 8
                       ),
                   0
                 ).applyEuler(rotation);
               }
               const dist = currentBirdPos.distanceTo(pointOnPerch);
-              if (bird[8] === 2 && dist > 5) {
+              if (bird.action === BirdAction.PERCHED && dist > 5) {
                 self.rotateX(Math.PI / 2);
-                bird[8] = 0;
+                bird.setAction(BirdAction.FLYING);
                 setNewBird(bird);
               }
-              if (bird[7] % randomNum === 0 && bird[8] === 1) {
+              if (
+                bird.id % randomNum === 0 &&
+                bird.action === BirdAction.PERCHING
+              ) {
                 self.rotateX(-Math.PI / 2);
-                bird[8] = 2;
+                bird.setAction(BirdAction.PERCHED);
                 setNewBird(bird);
               }
             }}
@@ -326,16 +336,16 @@ const inBiasGroup2 = (index: number, length: number) =>
   index > length / 5 && index < (2 * length) / 5;
 
 const move = (
-  birds: number[][],
-  birdMap: Map<string, number[][]>,
+  birds: Bird[],
+  birdMap: Map<string, Bird[]>,
   neighbords: string[],
-  bird: number[],
+  bird: Bird,
   bounds: number[],
   boidConsts: BoidConstants,
   mousePos: number[],
   time: number
-): number[] => {
-  const currentBirdPos = new Vector3(bird[0], bird[1], bird[2]);
+): Bird => {
+  const currentBirdPos = new Vector3(bird.x, bird.y, bird.z);
   let xPos = 0;
   let yPos = 0;
   let zPos = 0;
@@ -353,8 +363,8 @@ const move = (
   for (const neighbor of neighbords) {
     if (!new Set(Array.from(birdMap.keys())).has(neighbor)) continue;
     for (const nbirds of birdMap.get(neighbor) || []) {
-      if (nbirds[7] !== bird[7]) {
-        const nBirdPos = new Vector3(nbirds[0], nbirds[1], nbirds[2]);
+      if (nbirds.id !== bird.id) {
+        const nBirdPos = new Vector3(nbirds.x, nbirds.y, nbirds.z);
         // const mouseP = new Vector3(mousePos[0], mousePos[1], mousePos[2]);
         // if (currentBirdPos.distanceTo(mouseP) < boidConsts.visualRange) {
         //   mouseX = mouseP.x - currentBirdPos.x;
@@ -362,12 +372,12 @@ const move = (
         //   mouseZ = -currentBirdPos.z;
         // }
         if (currentBirdPos.distanceTo(nBirdPos) < boidConsts.visualRange) {
-          xPos += nbirds[0];
-          yPos += nbirds[1];
-          zPos += nbirds[2];
-          xVel += nbirds[3];
-          yVel += nbirds[4];
-          zVel += nbirds[5];
+          xPos += nbirds.x;
+          yPos += nbirds.y;
+          zPos += nbirds.z;
+          xVel += nbirds.vx;
+          yVel += nbirds.vy;
+          zVel += nbirds.vz;
           neighbors += 1;
         }
         if (currentBirdPos.distanceTo(nBirdPos) < boidConsts.protectedRange) {
@@ -379,22 +389,20 @@ const move = (
     }
   }
   if (neighbors > 0) {
-    bird[3] +=
-      // mouseX * 0.01 +
-      (xPos / neighbors - bird[0]) * boidConsts.centeringFactor +
-      (xVel / neighbors - bird[3]) * boidConsts.matchingFactor;
-    bird[4] +=
-      // mouseY * 0.01 +
-      (yPos / neighbors - bird[1]) * boidConsts.centeringFactor +
-      (yVel / neighbors - bird[4]) * boidConsts.matchingFactor;
-    bird[5] +=
-      // mouseZ * 0.01 +
-      (zPos / neighbors - bird[2]) * boidConsts.centeringFactor +
-      (zVel / neighbors - bird[5]) * boidConsts.matchingFactor;
+    bird.incremVXYZ(
+      (xPos / neighbors - bird.x) * boidConsts.centeringFactor +
+        (xVel / neighbors - bird.vx) * boidConsts.matchingFactor,
+      (yPos / neighbors - bird.y) * boidConsts.centeringFactor +
+        (yVel / neighbors - bird.vy) * boidConsts.matchingFactor,
+      (zPos / neighbors - bird.z) * boidConsts.centeringFactor +
+        (zVel / neighbors - bird.vz) * boidConsts.matchingFactor
+    );
   }
-  bird[3] += closeX * boidConsts.avoidFactor;
-  bird[4] += closeY * boidConsts.avoidFactor;
-  bird[5] += closeZ * boidConsts.avoidFactor;
+  bird.incremVXYZ(
+    closeX * boidConsts.avoidFactor,
+    closeY * boidConsts.avoidFactor,
+    closeZ * boidConsts.avoidFactor
+  );
 
   const right = bounds[0] / 2;
   const left = (-1 * bounds[0]) / 2;
@@ -402,73 +410,79 @@ const move = (
   const down = (-1 * bounds[1]) / 2;
   const front = bounds[2] / 2;
   const back = (-1 * bounds[2]) / 2;
-  if (bird[0] > right) bird[3] -= boidConsts.turnFactor;
-  if (bird[0] < left) bird[3] += boidConsts.turnFactor;
-  if (bird[1] > up) bird[4] -= boidConsts.turnFactor;
-  if (bird[1] < down) bird[4] += boidConsts.turnFactor;
-  if (bird[2] > front) bird[5] -= boidConsts.turnFactor;
-  if (bird[2] < back) bird[5] += boidConsts.turnFactor;
+  if (bird.x > right) bird.incremVX(-1 * boidConsts.turnFactor);
+  if (bird.x < left) bird.incremVX(boidConsts.turnFactor);
+  if (bird.y > up) bird.incremVY(-1 * boidConsts.turnFactor);
+  if (bird.y < down) bird.incremVY(boidConsts.turnFactor);
+  if (bird.z > front) bird.incremVZ(-1 * boidConsts.turnFactor);
+  if (bird.z < back) bird.incremVZ(boidConsts.turnFactor);
 
-  if (inBiasGroup1(bird[7], birds.length)) {
-    if (bird[3] > 0)
-      bird[6] = Math.min(boidConsts.maxBias, bird[6] + boidConsts.biasIncrm);
+  if (inBiasGroup1(bird.id, birds.length)) {
+    if (bird.vx > 0)
+      bird.setBias(
+        Math.min(boidConsts.maxBias, bird.bias + boidConsts.biasIncrm)
+      );
     else
-      bird[6] = Math.max(boidConsts.biasIncrm, bird[6] - boidConsts.biasIncrm);
+      bird.setBias(
+        Math.max(boidConsts.biasIncrm, bird.bias - boidConsts.biasIncrm)
+      );
   }
-  if (inBiasGroup2(bird[7], birds.length)) {
-    if (bird[3] < 0)
-      bird[6] = Math.min(boidConsts.maxBias, bird[6] + boidConsts.biasIncrm);
+  if (inBiasGroup2(bird.id, birds.length)) {
+    if (bird.vx < 0)
+      bird.setBias(
+        Math.min(boidConsts.maxBias, bird.bias + boidConsts.biasIncrm)
+      );
     else
-      bird[6] = Math.max(boidConsts.biasIncrm, bird[6] - boidConsts.biasIncrm);
+      bird.setBias(
+        Math.max(boidConsts.biasIncrm, bird.bias - boidConsts.biasIncrm)
+      );
   }
 
-  if (inBiasGroup1(bird[7], birds.length)) {
-    bird[3] = (1 - bird[6]) * bird[3] + bird[6];
+  if (inBiasGroup1(bird.id, birds.length)) {
+    bird.setVX((1 - bird.bias) * bird.vx + bird.bias);
   }
-  if (inBiasGroup2(bird[7], birds.length)) {
-    bird[3] = (1 - bird[6]) * bird[3] - bird[6];
+  if (inBiasGroup2(bird.id, birds.length)) {
+    bird.setVX((1 - bird.bias) * bird.vx - bird.bias);
   }
-  const speed = (bird[3] ** 2 + bird[4] ** 2 + bird[5] ** 2) ** 0.5;
+  const speed = bird.getSpeed();
   if (speed < boidConsts.minSpeed) {
-    bird[3] = (bird[3] / speed) * boidConsts.minSpeed;
-    bird[4] = (bird[4] / speed) * boidConsts.minSpeed;
-    bird[5] = (bird[5] / speed) * boidConsts.minSpeed;
+    bird.setVX((bird.vx / speed) * boidConsts.minSpeed);
+    bird.setVY((bird.vy / speed) * boidConsts.minSpeed);
+    bird.setVZ((bird.vz / speed) * boidConsts.minSpeed);
   }
   if (speed > boidConsts.maxSpeed) {
-    bird[3] = (bird[3] / speed) * boidConsts.maxSpeed;
-    bird[4] = (bird[4] / speed) * boidConsts.maxSpeed;
-    bird[5] = (bird[5] / speed) * boidConsts.maxSpeed;
+    bird.setVX((bird.vx / speed) * boidConsts.maxSpeed);
+    bird.setVY((bird.vy / speed) * boidConsts.maxSpeed);
+    bird.setVZ((bird.vz / speed) * boidConsts.maxSpeed);
   }
 
-  bird[0] += bird[3];
-  bird[1] += bird[4];
-  bird[2] += bird[5];
+  bird.move();
 
   return bird;
 };
 
 const moveToPerch = (
-  birds: number[][],
-  bird: number[],
+  birds: Bird[],
+  bird: Bird,
   boidConsts: BoidConstants,
   time: number
-) => {
+): Bird => {
   let randomNum;
-  if (bird[11] === -1) randomNum = MathUtils.randInt(0, 1);
-  else randomNum = bird[11];
-  const currentBirdPos = new Vector3(bird[0], bird[1], bird[2]);
+  if (bird.perchLoc === -1) randomNum = MathUtils.randInt(0, 1);
+  else randomNum = bird.perchLoc;
+  const currentBirdPos = new Vector3(bird.x, bird.y, bird.z);
   let pointOnPerch;
   if (randomNum === 0)
     pointOnPerch = new Vector3(
       50 *
         Math.cos(
-          -(Math.PI - (2 * Math.PI) / 8) * (bird[7] / birds.length) -
+          -(Math.PI - (2 * Math.PI) / 8) * (bird.id / birds.length) -
             Math.PI / 8
         ),
       -148 +
         10 *
           Math.sin(
-            -(Math.PI - (2 * Math.PI) / 8) * (bird[7] / birds.length) -
+            -(Math.PI - (2 * Math.PI) / 8) * (bird.id / birds.length) -
               Math.PI / 8
           ),
       0
@@ -478,13 +492,13 @@ const moveToPerch = (
     pointOnPerch = new Vector3(
       150 *
         Math.cos(
-          -(Math.PI - (2 * Math.PI) / 8) * (bird[7] / birds.length) -
+          -(Math.PI - (2 * Math.PI) / 8) * (bird.id / birds.length) -
             Math.PI / 8
         ),
       -98 +
         40 *
           Math.sin(
-            -(Math.PI - (2 * Math.PI) / 8) * (bird[7] / birds.length) -
+            -(Math.PI - (2 * Math.PI) / 8) * (bird.id / birds.length) -
               Math.PI / 8
           ),
       0
@@ -492,33 +506,27 @@ const moveToPerch = (
   }
   const dist = currentBirdPos.distanceTo(pointOnPerch);
 
-  if (dist > 2 && bird[3] !== 0 && bird[4] !== 0 && bird[5] !== 0) {
-    bird[3] += (pointOnPerch.x - currentBirdPos.x) * dist;
-    bird[4] += (pointOnPerch.y - currentBirdPos.y) * dist;
-    bird[5] += (pointOnPerch.z - currentBirdPos.z) * dist;
+  if (dist > 2 && bird.vx !== 0 && bird.vy !== 0 && bird.vz !== 0) {
+    bird.incremVX((pointOnPerch.x - currentBirdPos.x) * dist);
+    bird.incremVY((pointOnPerch.y - currentBirdPos.y) * dist);
+    bird.incremVZ((pointOnPerch.z - currentBirdPos.z) * dist);
 
-    const speed = (bird[3] ** 2 + bird[4] ** 2 + bird[5] ** 2) ** 0.5;
+    const speed = bird.getSpeed();
     if (speed > boidConsts.maxSpeed) {
-      bird[3] = (bird[3] / speed) * boidConsts.maxSpeed;
-      bird[4] = (bird[4] / speed) * boidConsts.maxSpeed;
-      bird[5] = (bird[5] / speed) * boidConsts.maxSpeed;
+      bird.setVX((bird.vx / speed) * boidConsts.maxSpeed);
+      bird.setVY((bird.vy / speed) * boidConsts.maxSpeed);
+      bird.setVZ((bird.vz / speed) * boidConsts.maxSpeed);
     }
-    bird[0] += bird[3];
-    bird[1] += bird[4];
-    bird[2] += bird[5];
+    bird.move();
   } else {
-    bird[0] = pointOnPerch.x;
-    bird[1] = pointOnPerch.y;
-    bird[2] = pointOnPerch.z;
-    bird[3] = 0;
-    bird[4] = 0;
-    bird[5] = 0;
-    if (bird[8] === 0) {
-      bird[8] = 1;
-      bird[10] = time;
+    bird.setXYZ(pointOnPerch.x, pointOnPerch.y, pointOnPerch.z);
+    bird.setVXYZ(0, 0, 0);
+    if (bird.action === BirdAction.FLYING) {
+      bird.setAction(BirdAction.PERCHING);
+      bird.setPerchedAt(time);
     }
   }
-  bird[11] = randomNum;
+  bird.setPerchLoc(randomNum);
 
   return bird;
 };
@@ -526,11 +534,11 @@ const moveToPerch = (
 const neighbors = (
   birdGrid: number[],
   gridSize: number,
-  bird: number[]
+  bird: Bird
 ): string[] => {
-  const x = bird[0];
-  const y = bird[1];
-  const z = bird[2];
+  const x = bird.x;
+  const y = bird.y;
+  const z = bird.z;
   const midX = birdGrid[0] + gridSize / 2;
   const midY = birdGrid[1] + gridSize / 2;
   const midZ = birdGrid[2] + gridSize / 2;
