@@ -7,6 +7,7 @@ import { AxesHelper, Color } from "three";
 
 export const PageCanvas = (): ReactElement => {
   const [border, setBorder] = useState<number[]>([300, 180, 240]);
+  const [height, setHeight] = useState<number>(100);
   const [boxOpacity, setBoxOpacity] = useState<number>(0);
   const [numberBirds, setNumberBirds] = useState<number>(300);
   const [constants, setConstants] = useState<BoidConstants>({
@@ -63,6 +64,14 @@ export const PageCanvas = (): ReactElement => {
           onValueChange={(number: number[]) =>
             setBorder([border[0], border[1], number[0]])
           }
+        />
+        <ConstSlider
+          name="height"
+          min={-200}
+          max={200}
+          defaultVal={[height]}
+          step={1}
+          onValueChange={(number: number[]) => setHeight(number[0])}
         />
         <ConstSlider
           name="visual range"
@@ -184,7 +193,7 @@ export const PageCanvas = (): ReactElement => {
           shadows={true}
           camera={{
             fov: 75,
-            position: [0, 0, Math.max(border[0], border[1], border[2])],
+            position: [0, 50, 400],
           }}
           className="bg-blue-400"
         >
@@ -193,6 +202,7 @@ export const PageCanvas = (): ReactElement => {
           {/* <CircleCone /> */}
           <Birds
             border={border}
+            height={height}
             boidConstants={constants}
             boxOpacity={boxOpacity}
             numberBirds={numberBirds}

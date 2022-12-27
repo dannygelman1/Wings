@@ -32,3 +32,11 @@ export type Bird = {
   perchedAt: number; // time stamp that bird perched
   perchLoc: number; // determines which perch
 };
+
+export type Wire = {
+  ax: number;
+  ay: number;
+  xRadius: number;
+  yRadius: number;
+  rotation: number;
+};
