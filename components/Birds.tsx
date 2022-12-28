@@ -62,37 +62,35 @@ export const Birds = ({
   const [wires] = useState<Wire[]>(
     Array.from(Array(8)).map(() => ({
       ax: MathUtils.randFloat(-100, 100),
-      ay: MathUtils.randFloat(-200, -50),
+      ay: MathUtils.randFloat(-100, -50),
       xRadius: MathUtils.randFloat(50, 150),
       yRadius: MathUtils.randFloat(10, 80),
       rotation: MathUtils.randFloat(Math.PI / 10, Math.PI),
     }))
   );
+  const [points] = useState<Vector3[]>(getPointsFromWires(wires));
 
   const [birds, setBirds] = useState<Bird[]>(
-    Array.from(Array(numberBirds)).map(
-      (_val, i) =>
-        new Bird({
-          x: MathUtils.randFloat((-1 * border[0]) / 2, border[0] / 2),
-          y: MathUtils.randFloat(
-            (-1 * border[1]) / 2 + height,
-            border[1] / 2 + height
-          ),
-          z: MathUtils.randFloat((-1 * border[2]) / 2, border[2] / 2),
-          vx: MathUtils.randFloat(-2, 2),
-          vy: MathUtils.randFloat(-2, 2),
-          vz: MathUtils.randFloat(-2, 2),
-          bias:
-            inBiasGroup1(i, numberBirds) || inBiasGroup2(i, numberBirds)
-              ? MathUtils.randFloat(0.00004, 0.01)
-              : 0,
-          id: i,
-          action: BirdAction.FLYING,
-          perchDur: MathUtils.randFloat(maxPerchingTime / 3.0, maxPerchingTime), // random perch duration
-          perchedAt: 0, // time stamp that bird perched
-          perchLoc: MathUtils.randInt(0, wires.length - 1), // determines which perch
-        })
-    )
+    Array.from(Array(numberBirds)).map((_val, i) => {
+      const rand = MathUtils.randInt(0, points.length - 1);
+      return new Bird({
+        x: points[rand].x,
+        y: points[rand].y,
+        z: points[rand].z,
+        vx: MathUtils.randFloat(-2, 2),
+        vy: MathUtils.randFloat(-2, 2),
+        vz: MathUtils.randFloat(-2, 2),
+        bias:
+          inBiasGroup1(i, numberBirds) || inBiasGroup2(i, numberBirds)
+            ? MathUtils.randFloat(0.00004, 0.01)
+            : 0,
+        id: i,
+        action: BirdAction.FLYING,
+        perchDur: MathUtils.randFloat(maxPerchingTime / 3.0, maxPerchingTime), // random perch duration
+        perchedAt: 0, // time stamp that bird perched
+        perchLoc: [points[rand].x, points[rand].y, points[rand].z], // determines which perch
+      });
+    })
   );
 
   const [birdNum, setBirdNum] = useState<number>(numberBirds);
@@ -117,6 +115,7 @@ export const Birds = ({
   useEffect(() => {
     const diff = numberBirds - birds.length;
     if (diff > 0) {
+      const rand = MathUtils.randInt(0, points.length - 1);
       Array.from(Array(diff)).forEach(() =>
         birds.push(
           new Bird({
@@ -137,7 +136,7 @@ export const Birds = ({
               maxPerchingTime
             ), // random perch duration
             perchedAt: 0, // time stamp that bird perched
-            perchLoc: MathUtils.randInt(0, wires.length - 1), // determines which perch
+            perchLoc: [points[rand].x, points[rand].y, points[rand].z], // determines which perch
           })
         )
       );
@@ -194,20 +193,28 @@ export const Birds = ({
       );
       const time = state.clock.getElapsedTime();
 
-      if (floor(time) % maxPerchingTime === 0 && timeInterval !== floor(time)) {
-        setRandomNum(MathUtils.randInt(2, 10));
-        birds
-          .filter((bird) => bird.perchedAt + maxPerchingTime < time)
-          .forEach((bird) => (bird.perchedAt = 0));
-        setTimeInterval(floor(time));
-      }
+      // if (floor(time) % maxPerchingTime === 0 && timeInterval !== floor(time)) {
+      //   setRandomNum(MathUtils.randInt(2, 10));
+      //   birds
+      //     .filter((bird) => bird.perchedAt + maxPerchingTime < time)
+      //     .forEach((bird) => (bird.perchedAt = 0));
+      //   setTimeInterval(floor(time));
+      // }
+      const currentBirdPos = new Vector3(b.x, b.y, b.z);
+      const pointOnPerch = new Vector3(
+        b.perchLoc[0],
+        b.perchLoc[1],
+        b.perchLoc[2]
+      );
+      const dist = currentBirdPos.distanceTo(pointOnPerch);
 
       if (
-        b.id % randomNum === 0 &&
-        b.id !== 0 &&
-        (time < b.perchedAt + b.perchDur || b.perchedAt === 0)
+        time > 10 &&
+        dist < 150 &&
+        (time < b.perchedAt + b.perchDur || b.perchedAt === 0) &&
+        (b.willPerch() || b.action !== BirdAction.FLYING)
       ) {
-        const newPos = moveToPerch(birds, b, boidConstants, wires, time);
+        const newPos = moveToPerch2(dist, b, boidConstants, wires, time);
         return newPos;
       } else {
         const newPos = move(
@@ -263,28 +270,30 @@ export const Birds = ({
             args={[1, 5]}
             onUpdate={(self) => {
               const currentBirdPos = new Vector3(bird.x, bird.y, bird.z);
-              const pointOnPerch = getPointOnPerch(
-                bird,
-                birds.length,
-                wires[bird.perchLoc]
+              const pointOnPerch = new Vector3(
+                bird.perchLoc[0],
+                bird.perchLoc[1],
+                bird.perchLoc[2]
               );
               const dist = currentBirdPos.distanceTo(pointOnPerch);
               if (bird.action === BirdAction.PERCHED && dist > 5) {
                 self.rotateX(Math.PI / 2);
+                bird.setVXYZ(
+                  MathUtils.randFloat(-2, 2),
+                  MathUtils.randFloat(-2, 2),
+                  MathUtils.randFloat(-2, 2)
+                );
                 bird.setAction(BirdAction.FLYING);
                 setNewBird(bird);
               }
-              if (
-                bird.id % randomNum === 0 &&
-                bird.action === BirdAction.PERCHING
-              ) {
+              if (bird.action === BirdAction.PERCHING) {
                 self.rotateX(-Math.PI / 2);
                 bird.setAction(BirdAction.PERCHED);
                 setNewBird(bird);
               }
             }}
           />
-          <meshStandardMaterial color={"blue"} />
+          <meshStandardMaterial color={bird.perchedAt === 0 ? "blue" : "red"} />
         </mesh>
       ))}
       {wires.map((wire, i) => (
@@ -324,7 +333,15 @@ const move = (
   mousePos: number[],
   time: number
 ): Bird => {
+  if (
+    bird.action === BirdAction.PERCHED &&
+    time < bird.perchedAt + bird.perchDur &&
+    time > 10
+  ) {
+    return bird;
+  }
   const currentBirdPos = new Vector3(bird.x, bird.y, bird.z);
+  const currentBirdVel = new Vector3(bird.vx, bird.vy, bird.vz);
   let xPos = 0;
   let yPos = 0;
   let zPos = 0;
@@ -383,6 +400,31 @@ const move = (
     closeZ * boidConsts.avoidFactor
   );
 
+  // const pointOnPerch = new Vector3(
+  //   bird.perchLoc[0],
+  //   bird.perchLoc[1],
+  //   bird.perchLoc[2]
+  // );
+  // const dist = currentBirdPos.distanceTo(pointOnPerch);
+
+  // if (
+  //   dist < 150 &&
+  //   time > 10 &&
+  //   (bird.action === BirdAction.FLYING ||
+  //     bird.action === BirdAction.FLYINGDOWN) &&
+  //   bird.perchedAt === 0 &&
+  //   MathUtils.randInt(0, 10) === 0
+  // ) {
+  //   // const dirToPoint = pointOnPerch.sub(currentBirdPos).normalize();
+  //   // const currentDir = currentBirdVel.normalize();
+  //   // const crossProd = dirToPoint.cross(currentDir);
+  //   // if (Math.abs(crossProd.length()) < 1) {
+  //   bird.setAction(BirdAction.FLYINGDOWN);
+  //   bird.incremVX((pointOnPerch.x - currentBirdPos.x) * dist * 0.001);
+  //   bird.incremVY((pointOnPerch.y - currentBirdPos.y) * dist * 0.001);
+  //   bird.incremVZ((pointOnPerch.z - currentBirdPos.z) * dist * 0.001);
+  //   // }
+  // } else if (bird.action === BirdAction.FLYING) {
   const right = bounds[0] / 2;
   const left = (-1 * bounds[0]) / 2;
   const up = bounds[1] / 2 + height;
@@ -395,6 +437,7 @@ const move = (
   if (bird.y < down) bird.incremVY(boidConsts.turnFactor);
   if (bird.z > front) bird.incremVZ(-1 * boidConsts.turnFactor);
   if (bird.z < back) bird.incremVZ(boidConsts.turnFactor);
+  // }
 
   if (inBiasGroup1(bird.id, birds.length)) {
     if (bird.vx > 0)
@@ -423,6 +466,7 @@ const move = (
   if (inBiasGroup2(bird.id, birds.length)) {
     bird.setVX((1 - bird.bias) * bird.vx - bird.bias);
   }
+
   const speed = bird.getSpeed();
   if (speed < boidConsts.minSpeed) {
     bird.setVX((bird.vx / speed) * boidConsts.minSpeed);
@@ -435,8 +479,72 @@ const move = (
     bird.setVZ((bird.vz / speed) * boidConsts.maxSpeed);
   }
 
+  // if (
+  //   dist < 1 &&
+  //   time > 10 &&
+  //   bird.action === BirdAction.FLYINGDOWN &&
+  //   bird.perchedAt === 0
+  // ) {
+  //   bird.setXYZ(pointOnPerch.x, pointOnPerch.y, pointOnPerch.z);
+  //   bird.setVXYZ(0, 0, 0);
+  //   bird.setAction(BirdAction.PERCHING);
+  //   bird.setPerchedAt(time);
+  // }
+  if (bird.perchedAt + bird.perchDur + 10 < time) {
+    bird.setPerchedAt(0);
+  }
+
   bird.move();
 
+  return bird;
+};
+
+const moveToPerch2 = (
+  dist: number,
+  bird: Bird,
+  boidConsts: BoidConstants,
+  wires: Wire[],
+  time: number
+): Bird => {
+  if (
+    bird.action === BirdAction.PERCHED &&
+    time < bird.perchedAt + bird.perchDur
+  ) {
+    return bird;
+  }
+  const currentBirdPos = new Vector3(bird.x, bird.y, bird.z);
+  const pointOnPerch = new Vector3(
+    bird.perchLoc[0],
+    bird.perchLoc[1],
+    bird.perchLoc[2]
+  );
+
+  if (
+    dist > 2 &&
+    // (bird.action === BirdAction.FLYING ||
+    //   bird.action === BirdAction.FLYINGDOWN) &&
+    bird.perchedAt === 0
+    // MathUtils.randInt(0, 10) === 0
+  ) {
+    bird.setAction(BirdAction.FLYINGDOWN);
+    // bird.flag = 1;
+    bird.incremVX((pointOnPerch.x - currentBirdPos.x) * 0.01);
+    bird.incremVY((pointOnPerch.y - currentBirdPos.y) * 0.01);
+    bird.incremVZ((pointOnPerch.z - currentBirdPos.z) * 0.01);
+
+    const speed = bird.getSpeed();
+    if (speed > 2) {
+      bird.setVX((bird.vx / speed) * 2);
+      bird.setVY((bird.vy / speed) * 2);
+      bird.setVZ((bird.vz / speed) * 2);
+    }
+    bird.move();
+  } else {
+    bird.setXYZ(pointOnPerch.x, pointOnPerch.y, pointOnPerch.z);
+    bird.setVXYZ(0, 0, 0);
+    bird.setAction(BirdAction.PERCHING);
+    bird.setPerchedAt(time);
+  }
   return bird;
 };
 
@@ -448,10 +556,10 @@ const moveToPerch = (
   time: number
 ): Bird => {
   const currentBirdPos = new Vector3(bird.x, bird.y, bird.z);
-  const pointOnPerch = getPointOnPerch(
-    bird,
-    birds.length,
-    wires[bird.perchLoc]
+  const pointOnPerch = new Vector3(
+    bird.perchLoc[0],
+    bird.perchLoc[1],
+    bird.perchLoc[2]
   );
   const dist = currentBirdPos.distanceTo(pointOnPerch);
 
@@ -536,4 +644,28 @@ const getPointOnPerch = (bird: Bird, numBirds: number, wire: Wire): Vector3 => {
         ),
     0
   ).applyEuler(new Euler(0, wire.rotation, 0));
+};
+
+const getPointsFromWires = (wires: Wire[]): Vector3[] => {
+  const allPoints = [];
+  for (const wire of wires) {
+    const points = new EllipseCurve(
+      wire.ax,
+      wire.ay + 2,
+      wire.xRadius,
+      wire.yRadius,
+      Math.PI + Math.PI / 8,
+      0 - Math.PI / 8,
+      false,
+      0
+    ).getPoints(50);
+    for (const point of points) {
+      allPoints.push(
+        new Vector3(point.x, point.y, 0).applyEuler(
+          new Euler(0, wire.rotation, 0)
+        )
+      );
+    }
+  }
+  return allPoints;
 };

@@ -14,6 +14,7 @@ export type BoidConstants = {
 
 export enum BirdAction {
   "FLYING",
+  "FLYINGDOWN",
   "PERCHING",
   "PERCHED",
 }
@@ -30,7 +31,7 @@ export type Bird = {
   action: BirdAction;
   perchDur: number; // random perch duration
   perchedAt: number; // time stamp that bird perched
-  perchLoc: number; // determines which perch
+  perchLoc: number[]; // determines which perch
 };
 
 export type Wire = {

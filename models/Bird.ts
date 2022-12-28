@@ -1,3 +1,4 @@
+import { MathUtils } from "three";
 import { Bird as BirdType } from "../components/types";
 import { BirdAction } from "../components/types";
 
@@ -13,7 +14,8 @@ export class Bird {
   action: BirdAction;
   perchDur: number; // random perch duration
   perchedAt: number; // time stamp that bird perched
-  perchLoc: number; // determines which perch
+  perchLoc: number[]; // determines which perch
+  // flag: number = 0;
   constructor({
     x,
     y,
@@ -42,77 +44,77 @@ export class Bird {
     this.perchLoc = perchLoc;
   }
 
-  incremXYZ(x: number, y: number, z: number) {
+  incremXYZ(x: number, y: number, z: number): void {
     this.x += x;
     this.y += y;
     this.z += z;
   }
 
-  incremVXYZ(vx: number, vy: number, vz: number) {
+  incremVXYZ(vx: number, vy: number, vz: number): void {
     this.vx += vx;
     this.vy += vy;
     this.vz += vz;
   }
 
-  incremVX(vx: number) {
+  incremVX(vx: number): void {
     this.vx += vx;
   }
 
-  incremVY(vy: number) {
+  incremVY(vy: number): void {
     this.vy += vy;
   }
 
-  incremVZ(vz: number) {
+  incremVZ(vz: number): void {
     this.vz += vz;
   }
 
-  setVX(vx: number) {
+  setVX(vx: number): void {
     this.vx = vx;
   }
 
-  setVY(vy: number) {
+  setVY(vy: number): void {
     this.vy = vy;
   }
 
-  setVZ(vz: number) {
+  setVZ(vz: number): void {
     this.vz = vz;
   }
 
-  setXYZ(x: number, y: number, z: number) {
+  setXYZ(x: number, y: number, z: number): void {
     this.x = x;
     this.y = y;
     this.z = z;
   }
 
-  setVXYZ(vx: number, vy: number, vz: number) {
+  setVXYZ(vx: number, vy: number, vz: number): void {
     this.vx = vx;
     this.vy = vy;
     this.vz = vz;
   }
 
-  move() {
+  willPerch(): boolean {
+    return MathUtils.randInt(0, 200) === 8;
+  }
+
+  move(): void {
     this.x += this.vx;
     this.y += this.vy;
     this.z += this.vz;
   }
 
-  setBias(bias: number) {
+  setBias(bias: number): void {
     this.bias = bias;
   }
 
-  setAction(action: BirdAction) {
+  setAction(action: BirdAction): void {
     this.action = action;
   }
 
-  setPerchedAt(perchedAt: number) {
+  setPerchedAt(perchedAt: number): void {
     this.perchedAt = perchedAt;
   }
 
-  setPerchLoc(perchLoc: number) {
-    this.perchLoc = perchLoc;
-  }
-
-  getSpeed() {
+  getSpeed(): number {
     return (this.vx ** 2 + this.vy ** 2 + this.vz ** 2) ** 0.5;
   }
 }
