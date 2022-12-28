@@ -9,7 +9,7 @@ export const PageCanvas = (): ReactElement => {
   const [border, setBorder] = useState<number[]>([300, 180, 240]);
   const [height, setHeight] = useState<number>(100);
   const [boxOpacity, setBoxOpacity] = useState<number>(0);
-  const [numberBirds, setNumberBirds] = useState<number>(300);
+  const [numberBirds, setNumberBirds] = useState<number>(400);
   const [constants, setConstants] = useState<BoidConstants>({
     turnfactor: 0.2,
     visualRange: 40,
@@ -193,7 +193,7 @@ export const PageCanvas = (): ReactElement => {
           shadows={true}
           camera={{
             fov: 75,
-            position: [0, 50, 400],
+            position: [400, 50, 0],
           }}
           className="bg-blue-400"
         >

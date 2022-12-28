@@ -63,14 +63,21 @@ export const Birds = ({
     Array.from(Array(7)).map(() => ({
       ax: MathUtils.randFloat(-100, 100),
       ay: MathUtils.randFloat(-100, -50),
-      xRadius: MathUtils.randFloat(50, 150),
+      xRadius: MathUtils.randFloat(50, 300),
       yRadius: MathUtils.randFloat(10, 80),
-      numParallel: MathUtils.randInt(1, 3),
-      rotation: MathUtils.randFloat(Math.PI / 10, Math.PI),
+      numParallel: MathUtils.randInt(2, 3),
+      rotation: MathUtils.randInt(0, 1) === 1 ? Math.PI / 2 : 0,
       spacing: MathUtils.randInt(8, 35),
+      zTranslate: MathUtils.randFloat(-200, 200),
     }))
   );
   const [points] = useState<Vector3[]>(getPointsFromWires(wires));
+  const [plankPos] = useState<Map<number, Vector3[]>>(
+    getHorizontalPlankPos(wires, points)
+  );
+  const [wireEndPos] = useState<Map<string, Vector3[]>>(
+    getWireEndPoints(wires, points)
+  );
 
   const [birds, setBirds] = useState<Bird[]>(
     Array.from(Array(numberBirds)).map((_val, i) => {
@@ -208,7 +215,7 @@ export const Birds = ({
       const dist = currentBirdPos.distanceTo(pointOnPerch);
 
       if (
-        time > 10 &&
+        time > 17 &&
         dist < 150 &&
         (time < b.perchedAt + b.perchDur || b.perchedAt === 0) &&
         (b.willPerch() || b.action !== BirdAction.FLYING)
@@ -232,7 +239,6 @@ export const Birds = ({
     });
     setBirds(updateBirds);
   });
-
   return (
     <>
       <pointLight
@@ -292,136 +298,89 @@ export const Birds = ({
               }
             }}
           />
-          <meshStandardMaterial color={bird.perchedAt === 0 ? "blue" : "red"} />
+          <meshStandardMaterial color={"blue"} />
         </mesh>
       ))}
       {wires.map((wire, i) => {
         return getWireGeo(wire);
-        // if (wire.numParallel === 2) {
-        //   return (
-        //     <>
-        //       <Line
-        //         key={i}
-        //         points={new EllipseCurve(
-        //           wire.ax,
-        //           wire.ay,
-        //           wire.xRadius,
-        //           wire.yRadius,
-        //           Math.PI + Math.PI / 8,
-        //           0 - Math.PI / 8,
-        //           false,
-        //           0
-        //         ).getPoints(50)}
-        //         color="blue"
-        //         lineWidth={1}
-        //         rotation={new Euler(0, wire.rotation, 0)}
-        //       />
-        //       <Line
-        //         key={i}
-        //         points={new EllipseCurve(
-        //           wire.ax,
-        //           wire.ay,
-        //           wire.xRadius,
-        //           wire.yRadius,
-        //           Math.PI + Math.PI / 8,
-        //           0 - Math.PI / 8,
-        //           false,
-        //           0
-        //         )
-        //           .getPoints(50)
-        //           .map((point) => new Vector3(point.x, point.y, wire.spacing))}
-        //         color="blue"
-        //         lineWidth={1}
-        //         rotation={new Euler(0, wire.rotation, 0)}
-        //       />
-        //     </>
-        //   );
-        // }
-        // if (wire.numParallel === 3) {
-        //   return (
-        //     <>
-        //       <Line
-        //         key={i}
-        //         points={new EllipseCurve(
-        //           wire.ax,
-        //           wire.ay,
-        //           wire.xRadius,
-        //           wire.yRadius,
-        //           Math.PI + Math.PI / 8,
-        //           0 - Math.PI / 8,
-        //           false,
-        //           0
-        //         ).getPoints(50)}
-        //         color="blue"
-        //         lineWidth={1}
-        //         rotation={new Euler(0, wire.rotation, 0)}
-        //       />
-        //       <Line
-        //         key={i}
-        //         points={new EllipseCurve(
-        //           wire.ax,
-        //           wire.ay,
-        //           wire.xRadius,
-        //           wire.yRadius,
-        //           Math.PI + Math.PI / 8,
-        //           0 - Math.PI / 8,
-        //           false,
-        //           0
-        //         )
-        //           .getPoints(50)
-        //           .map(
-        //             (point) =>
-        //               new Vector3(
-        //                 point.x,
-        //                 point.y,
-        //                 wire.spacing % 2 === 0 ? wire.spacing : wire.spacing / 2
-        //               )
-        //           )}
-        //         color="blue"
-        //         lineWidth={1}
-        //         rotation={new Euler(0, wire.rotation, 0)}
-        //       />
-        //       <Line
-        //         key={i}
-        //         points={new EllipseCurve(
-        //           wire.ax,
-        //           wire.ay,
-        //           wire.xRadius,
-        //           wire.yRadius,
-        //           Math.PI + Math.PI / 8,
-        //           0 - Math.PI / 8,
-        //           false,
-        //           0
-        //         )
-        //           .getPoints(50)
-        //           .map(
-        //             (point) => new Vector3(point.x, point.y, wire.spacing * 2)
-        //           )}
-        //         color="blue"
-        //         lineWidth={1}
-        //         rotation={new Euler(0, wire.rotation, 0)}
-        //       />
-        //     </>
-        //   );
-        // }
-        // return (
-        //   <Line
-        //     key={i}
-        //     points={new EllipseCurve(
-        //       wire.ax,
-        //       wire.ay,
-        //       wire.xRadius,
-        //       wire.yRadius,
-        //       Math.PI + Math.PI / 8,
-        //       0 - Math.PI / 8,
-        //       false,
-        //       0
-        //     ).getPoints(50)}
-        //     color="blue"
-        //     lineWidth={1}
-        //     rotation={new Euler(0, wire.rotation, 0)}
-        //   />
-        // );
+      })}
+      {wires.map((wire, i) => {
+        const pos = plankPos.get(i);
+        if (!pos) return <></>;
+        return (
+          <>
+            <mesh
+              position={[pos[0].x, pos[0].y - 8, pos[0].z]}
+              rotation={new Euler(0, wire.rotation + Math.PI / 2, 0)}
+            >
+              <boxGeometry
+                args={[
+                  wire.numParallel === 1
+                    ? 10
+                    : wire.numParallel === 2
+                    ? wire.spacing * 1.5
+                    : wire.spacing * 3,
+                  3,
+                  3,
+                ]}
+              />
+              <meshStandardMaterial color="gray" />
+            </mesh>
+            <mesh
+              position={[pos[1].x, pos[1].y - 8, pos[1].z]}
+              rotation={new Euler(0, wire.rotation + Math.PI / 2, 0)}
+            >
+              <boxGeometry
+                args={[
+                  wire.numParallel === 1
+                    ? 10
+                    : wire.numParallel === 2
+                    ? wire.spacing * 1.5
+                    : wire.spacing * 3,
+                  3,
+                  3,
+                ]}
+              />
+              <meshStandardMaterial color="gray" />
+            </mesh>
+            <mesh
+              position={[pos[0].x, pos[0].y - 150, pos[0].z]}
+              // rotation={new Euler(0, wire.rotation + Math.PI / 2, 0)}
+            >
+              <boxGeometry args={[3, 300, 3]} />
+              <meshStandardMaterial color="gray" />
+            </mesh>
+            <mesh
+              position={[pos[1].x, pos[1].y - 150, pos[1].z]}
+              // rotation={new Euler(0, wire.rotation + Math.PI / 2, 0)}
+            >
+              <boxGeometry args={[3, 300, 3]} />
+              <meshStandardMaterial color="gray" />
+            </mesh>
+            {Array.from(Array(wire.numParallel)).map((_val, j) => {
+              const pos = wireEndPos.get(JSON.stringify([i, j]));
+              if (!pos) return <></>;
+              return (
+                <>
+                  <mesh
+                    position={[pos[0].x, pos[0].y - 4, pos[0].z]}
+                    // rotation={new Euler(0, wire.rotation + Math.PI / 2, 0)}
+                  >
+                    <cylinderGeometry args={[0.5, 1, 5]} />
+                    <meshStandardMaterial color={new Color(0x333333)} />
+                  </mesh>
+                  <mesh
+                    position={[pos[1].x, pos[1].y - 4, pos[1].z]}
+                    // rotation={new Euler(0, wire.rotation + Math.PI / 2, 0)}
+                  >
+                    <cylinderGeometry args={[0.5, 1, 5]} />
+                    <meshStandardMaterial color={new Color(0x333333)} />
+                  </mesh>
+                </>
+              );
+            })}
+          </>
+        );
       })}
     </>
   );
@@ -442,6 +401,7 @@ const move = (
   mousePos: number[],
   time: number
 ): Bird => {
+  if (time < bird.perchDur) return bird;
   const currentBirdPos = new Vector3(bird.x, bird.y, bird.z);
   const currentBirdVel = new Vector3(bird.vx, bird.vy, bird.vz);
   let xPos = 0;
@@ -663,12 +623,12 @@ const getPointsFromWires = (wires: Wire[]): Vector3[] => {
               point.x,
               point.y,
               i === 0
-                ? 0
+                ? wire.zTranslate
                 : i === 1
                 ? wire.spacing % 2 === 0
-                  ? wire.spacing
-                  : wire.spacing / 2
-                : wire.spacing * 2
+                  ? wire.zTranslate + wire.spacing
+                  : wire.zTranslate + wire.spacing / 2
+                : wire.zTranslate + wire.spacing * 2
             )
         );
       for (const point of points) {
@@ -686,7 +646,7 @@ const getPointsFromWires = (wires: Wire[]): Vector3[] => {
 const getWireGeo = (wire: Wire): ReactElement[] => {
   return Array.from(Array(wire.numParallel)).map((_val, i) => (
     <Line
-      key={wire.ax + wire.ay}
+      key={wire.ax + wire.ay + i}
       points={new EllipseCurve(
         wire.ax,
         wire.ay,
@@ -704,12 +664,12 @@ const getWireGeo = (wire: Wire): ReactElement[] => {
               point.x,
               point.y,
               i === 0
-                ? 0
+                ? wire.zTranslate
                 : i === 1
                 ? wire.spacing % 2 === 0
-                  ? wire.spacing
-                  : wire.spacing / 2
-                : wire.spacing * 2
+                  ? wire.zTranslate + wire.spacing
+                  : wire.zTranslate + wire.spacing / 2
+                : wire.zTranslate + wire.spacing * 2
             )
         )}
       color="blue"
@@ -717,4 +677,55 @@ const getWireGeo = (wire: Wire): ReactElement[] => {
       rotation={new Euler(0, wire.rotation, 0)}
     />
   ));
+};
+
+const getHorizontalPlankPos = (
+  wires: Wire[],
+  points: Vector3[]
+): Map<number, Vector3[]> => {
+  const enpointMap = new Map<number, Vector3[]>();
+  let runningStart = 0;
+  let runningEnd = 0;
+  for (let i = 0; i < wires.length; i++) {
+    runningStart = i === 0 ? 0 : runningEnd + 1;
+    runningEnd =
+      runningStart + 50 * wires[i].numParallel + (wires[i].numParallel - 1);
+
+    const start = points[runningStart];
+    const end = points[runningEnd];
+    if (wires[i].rotation === 0) {
+      const averageZ = (start.z + end.z) / 2;
+      const newStart = new Vector3(start.x, start.y, averageZ);
+      const newEnd = new Vector3(end.x, end.y, averageZ);
+      enpointMap.set(i, [newStart, newEnd]);
+    } else {
+      const averageX = (start.x + end.x) / 2;
+      const newStart = new Vector3(averageX, start.y, start.z);
+      const newEnd = new Vector3(averageX, end.y, end.z);
+      enpointMap.set(i, [newStart, newEnd]);
+    }
+  }
+
+  return enpointMap;
+};
+
+const getWireEndPoints = (
+  wires: Wire[],
+  points: Vector3[]
+): Map<string, Vector3[]> => {
+  const enpointMap = new Map<string, Vector3[]>();
+  let runningStart = 0;
+  let runningEnd = 0;
+  for (let i = 0; i < wires.length; i++) {
+    for (let j = 0; j < wires[i].numParallel; j++) {
+      runningStart = i === 0 && j === 0 ? 0 : runningEnd + 1;
+      runningEnd = runningStart + 50;
+      enpointMap.set(JSON.stringify([i, j]), [
+        points[runningStart],
+        points[runningEnd],
+      ]);
+    }
+  }
+
+  return enpointMap;
 };

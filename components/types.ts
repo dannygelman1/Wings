@@ -42,4 +42,5 @@ export type Wire = {
   rotation: number;
   numParallel: number;
   spacing: number;
+  zTranslate: number;
 };

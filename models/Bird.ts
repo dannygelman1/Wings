@@ -93,7 +93,7 @@ export class Bird {
   }
 
   willPerch(): boolean {
-    return MathUtils.randInt(0, 200) === 8;
+    return MathUtils.randInt(0, 50) === 8;
   }
 
   move(): void {
