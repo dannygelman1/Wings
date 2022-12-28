@@ -7,8 +7,9 @@ import { AxesHelper, Color } from "three";
 
 export const PageCanvas = (): ReactElement => {
   const [border, setBorder] = useState<number[]>([300, 180, 240]);
-  const [height, setHeight] = useState<number>(100);
+  const [height, setHeight] = useState<number>(80);
   const [boxOpacity, setBoxOpacity] = useState<number>(0);
+  const [allPerching, setAllPerching] = useState<boolean>(false);
   const [numberBirds, setNumberBirds] = useState<number>(400);
   const [constants, setConstants] = useState<BoidConstants>({
     turnfactor: 0.2,
@@ -65,13 +66,21 @@ export const PageCanvas = (): ReactElement => {
             setBorder([border[0], border[1], number[0]])
           }
         />
-        <ConstSlider
+        {/* <ConstSlider
           name="height"
           min={-200}
           max={200}
           defaultVal={[height]}
           step={1}
           onValueChange={(number: number[]) => setHeight(number[0])}
+        /> */}
+        <ConstSlider
+          name="all perching"
+          min={0}
+          max={1}
+          defaultVal={[0]}
+          step={1}
+          onValueChange={(number: number[]) => setAllPerching(number[0] === 1)}
         />
         <ConstSlider
           name="visual range"
@@ -193,7 +202,7 @@ export const PageCanvas = (): ReactElement => {
           shadows={true}
           camera={{
             fov: 75,
-            position: [400, 50, 0],
+            position: [400, 50, -100],
           }}
           className="bg-blue-400"
         >
@@ -206,6 +215,7 @@ export const PageCanvas = (): ReactElement => {
             boidConstants={constants}
             boxOpacity={boxOpacity}
             numberBirds={numberBirds}
+            allPerching={allPerching}
           />
           {/* <primitive
             object={new AxesHelper(10).setColors(

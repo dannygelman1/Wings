@@ -25,6 +25,7 @@ interface BirdsProps {
   boidConstants: BoidConstants;
   boxOpacity: number;
   numberBirds: number;
+  allPerching: boolean;
 }
 export const Birds = ({
   border,
@@ -32,6 +33,7 @@ export const Birds = ({
   boidConstants,
   boxOpacity,
   numberBirds,
+  allPerching,
 }: BirdsProps): ReactElement => {
   const { camera, gl, scene } = useThree();
   const controls = new OrbitControls(camera, gl.domElement);
@@ -199,13 +201,6 @@ export const Birds = ({
       );
       const time = state.clock.getElapsedTime();
 
-      // if (floor(time) % maxPerchingTime === 0 && timeInterval !== floor(time)) {
-      //   setRandomNum(MathUtils.randInt(2, 10));
-      //   birds
-      //     .filter((bird) => bird.perchedAt + maxPerchingTime < time)
-      //     .forEach((bird) => (bird.perchedAt = 0));
-      //   setTimeInterval(floor(time));
-      // }
       const currentBirdPos = new Vector3(b.x, b.y, b.z);
       const pointOnPerch = new Vector3(
         b.perchLoc[0],
@@ -215,10 +210,11 @@ export const Birds = ({
       const dist = currentBirdPos.distanceTo(pointOnPerch);
 
       if (
-        time > 17 &&
-        dist < 150 &&
-        (time < b.perchedAt + b.perchDur || b.perchedAt === 0) &&
-        (b.willPerch() || b.action !== BirdAction.FLYING)
+        (time > 17 &&
+          dist < 150 &&
+          (time < b.perchedAt + b.perchDur || b.perchedAt === 0) &&
+          (b.willPerch() || b.action !== BirdAction.FLYING)) ||
+        allPerching
       ) {
         const newPos = moveToPerch(dist, b, time);
         return newPos;
@@ -256,10 +252,6 @@ export const Birds = ({
           side={DoubleSide}
         />
       </mesh>
-      {/* <mesh position={[mousePos[0], mousePos[1], mousePos[2]]}>
-        <boxGeometry args={[40, 40, 40]} />
-        <meshStandardMaterial color="red" side={DoubleSide} />
-      </mesh> */}
       {birds.map((bird, i) => (
         <mesh
           name={bird.id.toString()}
@@ -302,7 +294,39 @@ export const Birds = ({
         </mesh>
       ))}
       {wires.map((wire, i) => {
-        return getWireGeo(wire);
+        return Array.from(Array(wire.numParallel)).map((_val, i) => (
+          <Line
+            key={wire.ax + wire.ay + i}
+            points={new EllipseCurve(
+              wire.ax,
+              wire.ay,
+              wire.xRadius,
+              wire.yRadius,
+              Math.PI + Math.PI / 8,
+              0 - Math.PI / 8,
+              false,
+              0
+            )
+              .getPoints(50)
+              .map(
+                (point) =>
+                  new Vector3(
+                    point.x,
+                    point.y,
+                    i === 0
+                      ? wire.zTranslate
+                      : i === 1
+                      ? wire.spacing % 2 === 0
+                        ? wire.zTranslate + wire.spacing
+                        : wire.zTranslate + wire.spacing / 2
+                      : wire.zTranslate + wire.spacing * 2
+                  )
+              )}
+            color="blue"
+            lineWidth={1}
+            rotation={new Euler(0, wire.rotation, 0)}
+          />
+        ));
       })}
       {wires.map((wire, i) => {
         const pos = plankPos.get(i);
@@ -343,17 +367,11 @@ export const Birds = ({
               />
               <meshStandardMaterial color="gray" />
             </mesh>
-            <mesh
-              position={[pos[0].x, pos[0].y - 150, pos[0].z]}
-              // rotation={new Euler(0, wire.rotation + Math.PI / 2, 0)}
-            >
+            <mesh position={[pos[0].x, pos[0].y - 150, pos[0].z]}>
               <boxGeometry args={[3, 300, 3]} />
               <meshStandardMaterial color="gray" />
             </mesh>
-            <mesh
-              position={[pos[1].x, pos[1].y - 150, pos[1].z]}
-              // rotation={new Euler(0, wire.rotation + Math.PI / 2, 0)}
-            >
+            <mesh position={[pos[1].x, pos[1].y - 150, pos[1].z]}>
               <boxGeometry args={[3, 300, 3]} />
               <meshStandardMaterial color="gray" />
             </mesh>
@@ -362,17 +380,11 @@ export const Birds = ({
               if (!pos) return <></>;
               return (
                 <>
-                  <mesh
-                    position={[pos[0].x, pos[0].y - 4, pos[0].z]}
-                    // rotation={new Euler(0, wire.rotation + Math.PI / 2, 0)}
-                  >
+                  <mesh position={[pos[0].x, pos[0].y - 4, pos[0].z]}>
                     <cylinderGeometry args={[0.5, 1, 5]} />
                     <meshStandardMaterial color={new Color(0x333333)} />
                   </mesh>
-                  <mesh
-                    position={[pos[1].x, pos[1].y - 4, pos[1].z]}
-                    // rotation={new Euler(0, wire.rotation + Math.PI / 2, 0)}
-                  >
+                  <mesh position={[pos[1].x, pos[1].y - 4, pos[1].z]}>
                     <cylinderGeometry args={[0.5, 1, 5]} />
                     <meshStandardMaterial color={new Color(0x333333)} />
                   </mesh>
@@ -641,42 +653,6 @@ const getPointsFromWires = (wires: Wire[]): Vector3[] => {
     }
   }
   return allPoints;
-};
-
-const getWireGeo = (wire: Wire): ReactElement[] => {
-  return Array.from(Array(wire.numParallel)).map((_val, i) => (
-    <Line
-      key={wire.ax + wire.ay + i}
-      points={new EllipseCurve(
-        wire.ax,
-        wire.ay,
-        wire.xRadius,
-        wire.yRadius,
-        Math.PI + Math.PI / 8,
-        0 - Math.PI / 8,
-        false,
-        0
-      )
-        .getPoints(50)
-        .map(
-          (point) =>
-            new Vector3(
-              point.x,
-              point.y,
-              i === 0
-                ? wire.zTranslate
-                : i === 1
-                ? wire.spacing % 2 === 0
-                  ? wire.zTranslate + wire.spacing
-                  : wire.zTranslate + wire.spacing / 2
-                : wire.zTranslate + wire.spacing * 2
-            )
-        )}
-      color="blue"
-      lineWidth={1}
-      rotation={new Euler(0, wire.rotation, 0)}
-    />
-  ));
 };
 
 const getHorizontalPlankPos = (
