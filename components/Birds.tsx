@@ -40,7 +40,7 @@ export const Birds = ({
   controls.zoomSpeed = 0.001;
 
   controls.target.set(0, 0, 0);
-  camera.position.set(camera.position.x, 0, camera.position.z);
+  // camera.position.set(camera.position.x, 0, camera.position.z);
   camera.lookAt(controls.target);
   controls.minPolarAngle = 0;
   controls.maxPolarAngle = 180;
@@ -60,12 +60,14 @@ export const Birds = ({
   }, []);
   const maxPerchingTime = 10;
   const [wires] = useState<Wire[]>(
-    Array.from(Array(8)).map(() => ({
+    Array.from(Array(7)).map(() => ({
       ax: MathUtils.randFloat(-100, 100),
       ay: MathUtils.randFloat(-100, -50),
       xRadius: MathUtils.randFloat(50, 150),
       yRadius: MathUtils.randFloat(10, 80),
+      numParallel: MathUtils.randInt(1, 3),
       rotation: MathUtils.randFloat(Math.PI / 10, Math.PI),
+      spacing: MathUtils.randInt(8, 35),
     }))
   );
   const [points] = useState<Vector3[]>(getPointsFromWires(wires));
@@ -95,9 +97,6 @@ export const Birds = ({
 
   const [birdNum, setBirdNum] = useState<number>(numberBirds);
   const [mousePos, setMousePos] = useState<number[]>([0, 0, 0]);
-
-  const [randomNum, setRandomNum] = useState<number>(MathUtils.randInt(15, 40));
-  const [timeInterval, setTimeInterval] = useState<number>(0);
 
   useEffect(() => {
     const mouseMove = (event: MouseEvent) => {
@@ -214,7 +213,7 @@ export const Birds = ({
         (time < b.perchedAt + b.perchDur || b.perchedAt === 0) &&
         (b.willPerch() || b.action !== BirdAction.FLYING)
       ) {
-        const newPos = moveToPerch2(dist, b, boidConstants, wires, time);
+        const newPos = moveToPerch(dist, b, time);
         return newPos;
       } else {
         const newPos = move(
@@ -296,24 +295,134 @@ export const Birds = ({
           <meshStandardMaterial color={bird.perchedAt === 0 ? "blue" : "red"} />
         </mesh>
       ))}
-      {wires.map((wire, i) => (
-        <Line
-          key={i}
-          points={new EllipseCurve(
-            wire.ax,
-            wire.ay,
-            wire.xRadius,
-            wire.yRadius,
-            Math.PI + Math.PI / 8,
-            0 - Math.PI / 8,
-            false,
-            0
-          ).getPoints(50)}
-          color="blue"
-          lineWidth={1}
-          rotation={new Euler(0, wire.rotation, 0)}
-        />
-      ))}
+      {wires.map((wire, i) => {
+        return getWireGeo(wire);
+        // if (wire.numParallel === 2) {
+        //   return (
+        //     <>
+        //       <Line
+        //         key={i}
+        //         points={new EllipseCurve(
+        //           wire.ax,
+        //           wire.ay,
+        //           wire.xRadius,
+        //           wire.yRadius,
+        //           Math.PI + Math.PI / 8,
+        //           0 - Math.PI / 8,
+        //           false,
+        //           0
+        //         ).getPoints(50)}
+        //         color="blue"
+        //         lineWidth={1}
+        //         rotation={new Euler(0, wire.rotation, 0)}
+        //       />
+        //       <Line
+        //         key={i}
+        //         points={new EllipseCurve(
+        //           wire.ax,
+        //           wire.ay,
+        //           wire.xRadius,
+        //           wire.yRadius,
+        //           Math.PI + Math.PI / 8,
+        //           0 - Math.PI / 8,
+        //           false,
+        //           0
+        //         )
+        //           .getPoints(50)
+        //           .map((point) => new Vector3(point.x, point.y, wire.spacing))}
+        //         color="blue"
+        //         lineWidth={1}
+        //         rotation={new Euler(0, wire.rotation, 0)}
+        //       />
+        //     </>
+        //   );
+        // }
+        // if (wire.numParallel === 3) {
+        //   return (
+        //     <>
+        //       <Line
+        //         key={i}
+        //         points={new EllipseCurve(
+        //           wire.ax,
+        //           wire.ay,
+        //           wire.xRadius,
+        //           wire.yRadius,
+        //           Math.PI + Math.PI / 8,
+        //           0 - Math.PI / 8,
+        //           false,
+        //           0
+        //         ).getPoints(50)}
+        //         color="blue"
+        //         lineWidth={1}
+        //         rotation={new Euler(0, wire.rotation, 0)}
+        //       />
+        //       <Line
+        //         key={i}
+        //         points={new EllipseCurve(
+        //           wire.ax,
+        //           wire.ay,
+        //           wire.xRadius,
+        //           wire.yRadius,
+        //           Math.PI + Math.PI / 8,
+        //           0 - Math.PI / 8,
+        //           false,
+        //           0
+        //         )
+        //           .getPoints(50)
+        //           .map(
+        //             (point) =>
+        //               new Vector3(
+        //                 point.x,
+        //                 point.y,
+        //                 wire.spacing % 2 === 0 ? wire.spacing : wire.spacing / 2
+        //               )
+        //           )}
+        //         color="blue"
+        //         lineWidth={1}
+        //         rotation={new Euler(0, wire.rotation, 0)}
+        //       />
+        //       <Line
+        //         key={i}
+        //         points={new EllipseCurve(
+        //           wire.ax,
+        //           wire.ay,
+        //           wire.xRadius,
+        //           wire.yRadius,
+        //           Math.PI + Math.PI / 8,
+        //           0 - Math.PI / 8,
+        //           false,
+        //           0
+        //         )
+        //           .getPoints(50)
+        //           .map(
+        //             (point) => new Vector3(point.x, point.y, wire.spacing * 2)
+        //           )}
+        //         color="blue"
+        //         lineWidth={1}
+        //         rotation={new Euler(0, wire.rotation, 0)}
+        //       />
+        //     </>
+        //   );
+        // }
+        // return (
+        //   <Line
+        //     key={i}
+        //     points={new EllipseCurve(
+        //       wire.ax,
+        //       wire.ay,
+        //       wire.xRadius,
+        //       wire.yRadius,
+        //       Math.PI + Math.PI / 8,
+        //       0 - Math.PI / 8,
+        //       false,
+        //       0
+        //     ).getPoints(50)}
+        //     color="blue"
+        //     lineWidth={1}
+        //     rotation={new Euler(0, wire.rotation, 0)}
+        //   />
+        // );
+      })}
     </>
   );
 };
@@ -333,13 +442,6 @@ const move = (
   mousePos: number[],
   time: number
 ): Bird => {
-  if (
-    bird.action === BirdAction.PERCHED &&
-    time < bird.perchedAt + bird.perchDur &&
-    time > 10
-  ) {
-    return bird;
-  }
   const currentBirdPos = new Vector3(bird.x, bird.y, bird.z);
   const currentBirdVel = new Vector3(bird.vx, bird.vy, bird.vz);
   let xPos = 0;
@@ -400,31 +502,6 @@ const move = (
     closeZ * boidConsts.avoidFactor
   );
 
-  // const pointOnPerch = new Vector3(
-  //   bird.perchLoc[0],
-  //   bird.perchLoc[1],
-  //   bird.perchLoc[2]
-  // );
-  // const dist = currentBirdPos.distanceTo(pointOnPerch);
-
-  // if (
-  //   dist < 150 &&
-  //   time > 10 &&
-  //   (bird.action === BirdAction.FLYING ||
-  //     bird.action === BirdAction.FLYINGDOWN) &&
-  //   bird.perchedAt === 0 &&
-  //   MathUtils.randInt(0, 10) === 0
-  // ) {
-  //   // const dirToPoint = pointOnPerch.sub(currentBirdPos).normalize();
-  //   // const currentDir = currentBirdVel.normalize();
-  //   // const crossProd = dirToPoint.cross(currentDir);
-  //   // if (Math.abs(crossProd.length()) < 1) {
-  //   bird.setAction(BirdAction.FLYINGDOWN);
-  //   bird.incremVX((pointOnPerch.x - currentBirdPos.x) * dist * 0.001);
-  //   bird.incremVY((pointOnPerch.y - currentBirdPos.y) * dist * 0.001);
-  //   bird.incremVZ((pointOnPerch.z - currentBirdPos.z) * dist * 0.001);
-  //   // }
-  // } else if (bird.action === BirdAction.FLYING) {
   const right = bounds[0] / 2;
   const left = (-1 * bounds[0]) / 2;
   const up = bounds[1] / 2 + height;
@@ -437,7 +514,6 @@ const move = (
   if (bird.y < down) bird.incremVY(boidConsts.turnFactor);
   if (bird.z > front) bird.incremVZ(-1 * boidConsts.turnFactor);
   if (bird.z < back) bird.incremVZ(boidConsts.turnFactor);
-  // }
 
   if (inBiasGroup1(bird.id, birds.length)) {
     if (bird.vx > 0)
@@ -479,17 +555,6 @@ const move = (
     bird.setVZ((bird.vz / speed) * boidConsts.maxSpeed);
   }
 
-  // if (
-  //   dist < 1 &&
-  //   time > 10 &&
-  //   bird.action === BirdAction.FLYINGDOWN &&
-  //   bird.perchedAt === 0
-  // ) {
-  //   bird.setXYZ(pointOnPerch.x, pointOnPerch.y, pointOnPerch.z);
-  //   bird.setVXYZ(0, 0, 0);
-  //   bird.setAction(BirdAction.PERCHING);
-  //   bird.setPerchedAt(time);
-  // }
   if (bird.perchedAt + bird.perchDur + 10 < time) {
     bird.setPerchedAt(0);
   }
@@ -499,13 +564,7 @@ const move = (
   return bird;
 };
 
-const moveToPerch2 = (
-  dist: number,
-  bird: Bird,
-  boidConsts: BoidConstants,
-  wires: Wire[],
-  time: number
-): Bird => {
+const moveToPerch = (dist: number, bird: Bird, time: number): Bird => {
   if (
     bird.action === BirdAction.PERCHED &&
     time < bird.perchedAt + bird.perchDur
@@ -519,15 +578,8 @@ const moveToPerch2 = (
     bird.perchLoc[2]
   );
 
-  if (
-    dist > 2 &&
-    // (bird.action === BirdAction.FLYING ||
-    //   bird.action === BirdAction.FLYINGDOWN) &&
-    bird.perchedAt === 0
-    // MathUtils.randInt(0, 10) === 0
-  ) {
+  if (dist > 2 && bird.perchedAt === 0) {
     bird.setAction(BirdAction.FLYINGDOWN);
-    // bird.flag = 1;
     bird.incremVX((pointOnPerch.x - currentBirdPos.x) * 0.01);
     bird.incremVY((pointOnPerch.y - currentBirdPos.y) * 0.01);
     bird.incremVZ((pointOnPerch.z - currentBirdPos.z) * 0.01);
@@ -545,45 +597,6 @@ const moveToPerch2 = (
     bird.setAction(BirdAction.PERCHING);
     bird.setPerchedAt(time);
   }
-  return bird;
-};
-
-const moveToPerch = (
-  birds: Bird[],
-  bird: Bird,
-  boidConsts: BoidConstants,
-  wires: Wire[],
-  time: number
-): Bird => {
-  const currentBirdPos = new Vector3(bird.x, bird.y, bird.z);
-  const pointOnPerch = new Vector3(
-    bird.perchLoc[0],
-    bird.perchLoc[1],
-    bird.perchLoc[2]
-  );
-  const dist = currentBirdPos.distanceTo(pointOnPerch);
-
-  if (dist > 2 && bird.vx !== 0 && bird.vy !== 0 && bird.vz !== 0) {
-    bird.incremVX((pointOnPerch.x - currentBirdPos.x) * dist);
-    bird.incremVY((pointOnPerch.y - currentBirdPos.y) * dist);
-    bird.incremVZ((pointOnPerch.z - currentBirdPos.z) * dist);
-
-    const speed = bird.getSpeed();
-    if (speed > boidConsts.maxSpeed) {
-      bird.setVX((bird.vx / speed) * boidConsts.maxSpeed);
-      bird.setVY((bird.vy / speed) * boidConsts.maxSpeed);
-      bird.setVZ((bird.vz / speed) * boidConsts.maxSpeed);
-    }
-    bird.move();
-  } else {
-    bird.setXYZ(pointOnPerch.x, pointOnPerch.y, pointOnPerch.z);
-    bird.setVXYZ(0, 0, 0);
-    if (bird.action === BirdAction.FLYING) {
-      bird.setAction(BirdAction.PERCHING);
-      bird.setPerchedAt(time);
-    }
-  }
-
   return bird;
 };
 
@@ -629,43 +642,79 @@ const neighbors = (
   return listNeighbords;
 };
 
-const getPointOnPerch = (bird: Bird, numBirds: number, wire: Wire): Vector3 => {
-  return new Vector3(
-    wire.ax +
-      wire.xRadius *
-        Math.cos(
-          -(Math.PI - (2 * Math.PI) / 8) * (bird.id / numBirds) - Math.PI / 8
-        ),
-    wire.ay +
-      2 +
-      wire.yRadius *
-        Math.sin(
-          -(Math.PI - (2 * Math.PI) / 8) * (bird.id / numBirds) - Math.PI / 8
-        ),
-    0
-  ).applyEuler(new Euler(0, wire.rotation, 0));
-};
-
 const getPointsFromWires = (wires: Wire[]): Vector3[] => {
   const allPoints = [];
   for (const wire of wires) {
-    const points = new EllipseCurve(
-      wire.ax,
-      wire.ay + 2,
-      wire.xRadius,
-      wire.yRadius,
-      Math.PI + Math.PI / 8,
-      0 - Math.PI / 8,
-      false,
-      0
-    ).getPoints(50);
-    for (const point of points) {
-      allPoints.push(
-        new Vector3(point.x, point.y, 0).applyEuler(
-          new Euler(0, wire.rotation, 0)
-        )
-      );
+    for (let i = 0; i < wire.numParallel; i++) {
+      const points = new EllipseCurve(
+        wire.ax,
+        wire.ay + 2,
+        wire.xRadius,
+        wire.yRadius,
+        Math.PI + Math.PI / 8,
+        0 - Math.PI / 8,
+        false,
+        0
+      )
+        .getPoints(50)
+        .map(
+          (point) =>
+            new Vector3(
+              point.x,
+              point.y,
+              i === 0
+                ? 0
+                : i === 1
+                ? wire.spacing % 2 === 0
+                  ? wire.spacing
+                  : wire.spacing / 2
+                : wire.spacing * 2
+            )
+        );
+      for (const point of points) {
+        allPoints.push(
+          new Vector3(point.x, point.y, point.z).applyEuler(
+            new Euler(0, wire.rotation, 0)
+          )
+        );
+      }
     }
   }
   return allPoints;
+};
+
+const getWireGeo = (wire: Wire): ReactElement[] => {
+  return Array.from(Array(wire.numParallel)).map((_val, i) => (
+    <Line
+      key={wire.ax + wire.ay}
+      points={new EllipseCurve(
+        wire.ax,
+        wire.ay,
+        wire.xRadius,
+        wire.yRadius,
+        Math.PI + Math.PI / 8,
+        0 - Math.PI / 8,
+        false,
+        0
+      )
+        .getPoints(50)
+        .map(
+          (point) =>
+            new Vector3(
+              point.x,
+              point.y,
+              i === 0
+                ? 0
+                : i === 1
+                ? wire.spacing % 2 === 0
+                  ? wire.spacing
+                  : wire.spacing / 2
+                : wire.spacing * 2
+            )
+        )}
+      color="blue"
+      lineWidth={1}
+      rotation={new Euler(0, wire.rotation, 0)}
+    />
+  ));
 };

@@ -40,4 +40,6 @@ export type Wire = {
   xRadius: number;
   yRadius: number;
   rotation: number;
+  numParallel: number;
+  spacing: number;
 };
