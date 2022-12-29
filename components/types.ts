@@ -14,8 +14,6 @@ export type BoidConstants = {
 
 export enum BirdAction {
   "FLYING",
-  "FLYINGDOWN",
-  "PERCHING",
   "PERCHED",
 }
 

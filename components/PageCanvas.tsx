@@ -1,10 +1,11 @@
-import { ReactElement, useRef, useState } from "react";
-import { Canvas } from "@react-three/fiber";
+import { ReactElement, useEffect, useRef, useState } from "react";
+import { Canvas, useThree } from "@react-three/fiber";
 import { Birds } from "./Birds";
 import { CircleCone } from "./CircleCone";
 import { BoidConstants } from "./types";
 import * as Slider from "@radix-ui/react-slider";
 import { AxesHelper, Color } from "three";
+import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 
 export const PageCanvas = (): ReactElement => {
   const [border, setBorder] = useState<number[]>([300, 180, 240]);
@@ -207,6 +208,7 @@ export const PageCanvas = (): ReactElement => {
           }}
           className="bg-blue-400"
         >
+          <CameraController />
           {/* <Environment map={map} background /> */}
           {/* <Geometry /> */}
           {/* <CircleCone /> */}
@@ -274,4 +276,17 @@ const ConstSlider = ({
       </Slider.Root>
     </div>
   );
+};
+
+const CameraController = () => {
+  const { camera, gl } = useThree();
+  useEffect(() => {
+    const controls = new OrbitControls(camera, gl.domElement);
+    controls.enableDamping;
+
+    return () => {
+      controls.dispose();
+    };
+  }, [camera, gl]);
+  return null;
 };

@@ -1,6 +1,5 @@
-import { ReactElement, useEffect, useMemo, useRef, useState } from "react";
+import { ReactElement, useEffect, useRef, useState } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
-import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import { PointLight } from "three/src/lights/PointLight";
 import {
   Color,
@@ -8,12 +7,11 @@ import {
   Vector3,
   MathUtils,
   Mesh,
-  ConeGeometry,
   BoxGeometry,
   DoubleSide,
   EllipseCurve,
   Euler,
-  CylinderGeometry,
+  Vector4,
 } from "three";
 import floor from "lodash-es/floor";
 import { BirdAction, BoidConstants, Wire } from "./types";
@@ -37,17 +35,6 @@ export const Birds = ({
   allPerching,
 }: BirdsProps): ReactElement => {
   const { camera, gl, scene } = useThree();
-  const controls = new OrbitControls(camera, gl.domElement);
-  controls.enableDamping = true;
-  controls.rotateSpeed = 0.01;
-  controls.zoomSpeed = 0.001;
-
-  controls.target.set(0, 0, 0);
-  // camera.position.set(camera.position.x, 0, camera.position.z);
-  camera.lookAt(controls.target);
-  controls.minPolarAngle = 0;
-  controls.maxPolarAngle = 180;
-  controls.target.set(0, 0, 0);
   const pointLight = useRef<PointLight>(null);
   const dirLight = useRef<DirectionalLight>(null);
   scene.add(camera);
@@ -68,7 +55,7 @@ export const Birds = ({
       zTranslate: MathUtils.randFloat(-200, 200),
     }))
   );
-  const [points] = useState<Vector3[]>(getPointsFromWires(wires));
+  const [points] = useState<Vector4[]>(getPointsFromWires(wires));
   const [plankPos] = useState<Map<number, Vector3[]>>(
     getHorizontalPlankPos(wires, points)
   );
@@ -76,7 +63,8 @@ export const Birds = ({
     getWireEndPoints(wires, points)
   );
 
-  const { nodes, materials } = useGLTF("/Wings/bird7.gltf");
+  const { nodes } = useGLTF("/Wings/bird.gltf");
+  const { nodes: perchNode } = useGLTF("/Wings/perch.gltf");
   const [mesh] = useState<Mesh | null>(
     nodes.bird instanceof Mesh ? nodes.bird : null
   );
@@ -85,6 +73,9 @@ export const Birds = ({
   );
   const [mesh3] = useState<Mesh | null>(
     nodes.bird002 instanceof Mesh ? nodes.bird002 : null
+  );
+  const [perch] = useState<Mesh | null>(
+    perchNode.birdperch instanceof Mesh ? perchNode.birdperch : null
   );
 
   const [birds, setBirds] = useState<Bird[]>(
@@ -102,10 +93,15 @@ export const Birds = ({
             ? MathUtils.randFloat(0.00004, 0.01)
             : 0,
         id: i,
-        action: BirdAction.FLYING,
+        action: BirdAction.PERCHED,
         perchDur: MathUtils.randFloat(maxPerchingTime / 3.0, maxPerchingTime), // random perch duration
         perchedAt: 0, // time stamp that bird perched
-        perchLoc: [points[rand].x, points[rand].y, points[rand].z], // determines which perch
+        perchLoc: [
+          points[rand].x,
+          points[rand].y,
+          points[rand].z,
+          points[rand].w,
+        ], // determines which perch
         flapOffset: MathUtils.randFloat(0, 10),
       });
     })
@@ -131,8 +127,8 @@ export const Birds = ({
   useEffect(() => {
     const diff = numberBirds - birds.length;
     if (diff > 0) {
-      const rand = MathUtils.randInt(0, points.length - 1);
-      Array.from(Array(diff)).forEach(() =>
+      Array.from(Array(diff)).forEach(() => {
+        const rand = MathUtils.randInt(0, points.length - 1);
         birds.push(
           new Bird({
             x: MathUtils.randFloat((-1 * border[0]) / 2, border[0] / 2),
@@ -152,30 +148,23 @@ export const Birds = ({
               maxPerchingTime
             ), // random perch duration
             perchedAt: 0, // time stamp that bird perched
-            perchLoc: [points[rand].x, points[rand].y, points[rand].z], // determines which perch
+            perchLoc: [
+              points[rand].x,
+              points[rand].y,
+              points[rand].z,
+              points[rand].w,
+            ], // determines which perch
             flapOffset: MathUtils.randFloat(0, 10),
           })
-        )
-      );
+        );
+      });
     } else {
       Array.from(Array(-1 * diff)).forEach(() => birds.pop());
     }
     setBirds(birds);
   }, [numberBirds]);
 
-  const setNewBird = (bird: Bird) => {
-    setBirds(
-      birds.map((b) => {
-        if (b.id === bird.id) {
-          return bird;
-        } else return b;
-      })
-    );
-  };
-
   useFrame((state) => {
-    controls.update();
-
     const birdMap = new Map<string, Bird[]>();
     const maxRange =
       Math.max(boidConstants.protectedRange, boidConstants.visualRange) * 2;
@@ -200,6 +189,7 @@ export const Birds = ({
       );
       const time = state.clock.getElapsedTime();
       setTime(time);
+
       const currentBirdPos = new Vector3(b.x, b.y, b.z);
       const pointOnPerch = new Vector3(
         b.perchLoc[0],
@@ -209,10 +199,9 @@ export const Birds = ({
       const dist = currentBirdPos.distanceTo(pointOnPerch);
 
       if (
-        (time > 17 &&
-          dist < 150 &&
-          (time < b.perchedAt + b.perchDur || b.perchedAt === 0) &&
-          (b.willPerch() || b.action !== BirdAction.FLYING)) ||
+        (dist < 150 &&
+          (time < b.perchedAt + b.perchDur ||
+            (time > maxPerchingTime * 2 && b.perchedAt === 0))) ||
         allPerching
       ) {
         const newPos = moveToPerch(dist, b, time);
@@ -253,69 +242,77 @@ export const Birds = ({
       </mesh>
       {birds.map((bird, i) => (
         <>
-          <mesh
-            name={bird.id.toString()}
-            key={i}
-            position={[bird.x, bird.y, bird.z]}
-            geometry={mesh?.geometry}
-            onUpdate={(self) => {
-              self.lookAt(
-                new Vector3(
-                  bird.x + bird.vx,
-                  bird.y + bird.vy,
-                  bird.z + bird.vz
-                )
-              );
-              const currentBirdPos = new Vector3(bird.x, bird.y, bird.z);
-              const pointOnPerch = new Vector3(
-                bird.perchLoc[0],
-                bird.perchLoc[1],
-                bird.perchLoc[2]
-              );
-              const dist = currentBirdPos.distanceTo(pointOnPerch);
-              if (bird.action === BirdAction.PERCHED && dist > 5) {
-                bird.setVXYZ(
-                  MathUtils.randFloat(-2, 2),
-                  MathUtils.randFloat(-2, 2),
-                  MathUtils.randFloat(-2, 2)
+          {bird.action !== BirdAction.PERCHED ? (
+            <mesh
+              name={bird.id.toString()}
+              key={i}
+              position={[bird.x, bird.y, bird.z]}
+              geometry={mesh?.geometry}
+              onUpdate={(self) => {
+                self.lookAt(
+                  new Vector3(
+                    bird.x + bird.vx,
+                    bird.y + bird.vy,
+                    bird.z + bird.vz
+                  )
                 );
-                bird.setAction(BirdAction.FLYING);
-                setNewBird(bird);
-              }
-              if (bird.action === BirdAction.PERCHING) {
-                bird.setAction(BirdAction.PERCHED);
-                setNewBird(bird);
-              }
-            }}
-          >
+              }}
+            >
+              <mesh
+                position={[0, 0, -0.5]}
+                rotation={
+                  new Euler(
+                    0,
+                    0,
+                    Math.sin((time * 7 + Math.PI / 2) * 2 + bird.flapOffset)
+                  )
+                }
+                geometry={mesh2?.geometry}
+              >
+                <meshStandardMaterial color="blue" />
+              </mesh>
+              <mesh
+                position={[0, 0, -0.5]}
+                rotation={
+                  new Euler(
+                    0,
+                    0,
+                    -Math.sin((time * 7 + Math.PI / 2) * 2 + bird.flapOffset)
+                  )
+                }
+                geometry={mesh3?.geometry}
+              >
+                <meshStandardMaterial color="blue" />
+              </mesh>
+              <meshStandardMaterial color={"blue"} />
+            </mesh>
+          ) : (
             <mesh
-              position={[0, 0, -0.5]}
+              position={
+                new Vector3(
+                  bird.perchLoc[0],
+                  bird.perchLoc[1] - 0.7,
+                  bird.perchLoc[2]
+                )
+              }
               rotation={
                 new Euler(
                   0,
-                  0,
-                  Math.sin((time * 7 + Math.PI / 2) * 2 + bird.flapOffset)
+                  bird.perchLoc[3] !== 0
+                    ? floor(bird.perchedAt) % 2 === 0
+                      ? Math.PI / 2
+                      : -Math.PI / 2
+                    : floor(bird.perchedAt) % 2 === 0
+                    ? 0
+                    : Math.PI,
+                  0
                 )
               }
-              geometry={mesh2?.geometry}
+              geometry={perch?.geometry}
             >
               <meshStandardMaterial color="blue" />
             </mesh>
-            <mesh
-              position={[0, 0, -0.5]}
-              rotation={
-                new Euler(
-                  0,
-                  0,
-                  -Math.sin((time * 7 + Math.PI / 2) * 2 + bird.flapOffset)
-                )
-              }
-              geometry={mesh3?.geometry}
-            >
-              <meshStandardMaterial color="blue" />
-            </mesh>
-            <meshStandardMaterial color={"blue"} />
-          </mesh>
+          )}
         </>
       ))}
       {wires.map((wire, i) => {
@@ -438,7 +435,6 @@ const move = (
   mousePos: number[],
   time: number
 ): Bird => {
-  if (time < bird.perchDur) return bird;
   const currentBirdPos = new Vector3(bird.x, bird.y, bird.z);
   const currentBirdVel = new Vector3(bird.vx, bird.vy, bird.vz);
   let xPos = 0;
@@ -555,19 +551,15 @@ const move = (
   if (bird.perchedAt + bird.perchDur + 10 < time) {
     bird.setPerchedAt(0);
   }
-
+  bird.setAction(BirdAction.FLYING);
   bird.move();
 
   return bird;
 };
 
 const moveToPerch = (dist: number, bird: Bird, time: number): Bird => {
-  if (
-    bird.action === BirdAction.PERCHED &&
-    time < bird.perchedAt + bird.perchDur
-  ) {
-    return bird;
-  }
+  if (bird.action === BirdAction.PERCHED) return bird;
+
   const currentBirdPos = new Vector3(bird.x, bird.y, bird.z);
   const pointOnPerch = new Vector3(
     bird.perchLoc[0],
@@ -576,7 +568,6 @@ const moveToPerch = (dist: number, bird: Bird, time: number): Bird => {
   );
 
   if (dist > 2 && bird.perchedAt === 0) {
-    bird.setAction(BirdAction.FLYINGDOWN);
     bird.incremVX((pointOnPerch.x - currentBirdPos.x) * 0.01);
     bird.incremVY((pointOnPerch.y - currentBirdPos.y) * 0.01);
     bird.incremVZ((pointOnPerch.z - currentBirdPos.z) * 0.01);
@@ -591,7 +582,7 @@ const moveToPerch = (dist: number, bird: Bird, time: number): Bird => {
   } else {
     bird.setXYZ(pointOnPerch.x, pointOnPerch.y, pointOnPerch.z);
     bird.setVXYZ(0, 0, 0);
-    bird.setAction(BirdAction.PERCHING);
+    bird.setAction(BirdAction.PERCHED);
     bird.setPerchedAt(time);
   }
   return bird;
@@ -639,8 +630,8 @@ const neighbors = (
   return listNeighbords;
 };
 
-const getPointsFromWires = (wires: Wire[]): Vector3[] => {
-  const allPoints = [];
+const getPointsFromWires = (wires: Wire[]): Vector4[] => {
+  const allPoints: Vector4[] = [];
   for (const wire of wires) {
     for (let i = 0; i < wire.numParallel; i++) {
       const points = new EllipseCurve(
@@ -669,9 +660,15 @@ const getPointsFromWires = (wires: Wire[]): Vector3[] => {
             )
         );
       for (const point of points) {
+        const pointOnWire = new Vector3(point.x, point.y, point.z).applyEuler(
+          new Euler(0, wire.rotation, 0)
+        );
         allPoints.push(
-          new Vector3(point.x, point.y, point.z).applyEuler(
-            new Euler(0, wire.rotation, 0)
+          new Vector4(
+            pointOnWire.x,
+            pointOnWire.y,
+            pointOnWire.z,
+            wire.rotation === 0 ? 0 : 1
           )
         );
       }
@@ -682,7 +679,7 @@ const getPointsFromWires = (wires: Wire[]): Vector3[] => {
 
 const getHorizontalPlankPos = (
   wires: Wire[],
-  points: Vector3[]
+  points: Vector4[]
 ): Map<number, Vector3[]> => {
   const enpointMap = new Map<number, Vector3[]>();
   let runningStart = 0;
@@ -712,7 +709,7 @@ const getHorizontalPlankPos = (
 
 const getWireEndPoints = (
   wires: Wire[],
-  points: Vector3[]
+  points: Vector4[]
 ): Map<string, Vector3[]> => {
   const enpointMap = new Map<string, Vector3[]>();
   let runningStart = 0;
@@ -722,8 +719,16 @@ const getWireEndPoints = (
       runningStart = i === 0 && j === 0 ? 0 : runningEnd + 1;
       runningEnd = runningStart + 50;
       enpointMap.set(JSON.stringify([i, j]), [
-        points[runningStart],
-        points[runningEnd],
+        new Vector3(
+          points[runningStart].x,
+          points[runningStart].y,
+          points[runningStart].z
+        ),
+        new Vector3(
+          points[runningEnd].x,
+          points[runningEnd].y,
+          points[runningEnd].z
+        ),
       ]);
     }
   }
