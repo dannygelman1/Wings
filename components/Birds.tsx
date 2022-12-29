@@ -13,10 +13,11 @@ import {
   DoubleSide,
   EllipseCurve,
   Euler,
+  CylinderGeometry,
 } from "three";
 import floor from "lodash-es/floor";
 import { BirdAction, BoidConstants, Wire } from "./types";
-import { Line } from "@react-three/drei";
+import { Line, useGLTF } from "@react-three/drei";
 import { Bird } from "../models/Bird";
 
 interface BirdsProps {
@@ -54,12 +55,6 @@ export const Birds = ({
   if (dirLight.current) camera.add(dirLight.current);
   const boxGeo = useRef<BoxGeometry>(null);
 
-  useEffect(() => {
-    scene.children.forEach((child) => {
-      if (child instanceof Mesh && child.geometry instanceof ConeGeometry)
-        child.geometry?.rotateX(Math.PI / 2);
-    });
-  }, []);
   const maxPerchingTime = 10;
   const [wires] = useState<Wire[]>(
     Array.from(Array(7)).map(() => ({
@@ -81,6 +76,17 @@ export const Birds = ({
     getWireEndPoints(wires, points)
   );
 
+  const { nodes, materials } = useGLTF("/Wings/bird7.gltf");
+  const [mesh] = useState<Mesh | null>(
+    nodes.bird instanceof Mesh ? nodes.bird : null
+  );
+  const [mesh2] = useState<Mesh | null>(
+    nodes.bird001 instanceof Mesh ? nodes.bird001 : null
+  );
+  const [mesh3] = useState<Mesh | null>(
+    nodes.bird002 instanceof Mesh ? nodes.bird002 : null
+  );
+
   const [birds, setBirds] = useState<Bird[]>(
     Array.from(Array(numberBirds)).map((_val, i) => {
       const rand = MathUtils.randInt(0, points.length - 1);
@@ -100,6 +106,7 @@ export const Birds = ({
         perchDur: MathUtils.randFloat(maxPerchingTime / 3.0, maxPerchingTime), // random perch duration
         perchedAt: 0, // time stamp that bird perched
         perchLoc: [points[rand].x, points[rand].y, points[rand].z], // determines which perch
+        flapOffset: MathUtils.randFloat(0, 10),
       });
     })
   );
@@ -120,6 +127,7 @@ export const Birds = ({
     gl.domElement.addEventListener("mousemove", mouseMove);
   }, []);
 
+  const [time, setTime] = useState<number>(0);
   useEffect(() => {
     const diff = numberBirds - birds.length;
     if (diff > 0) {
@@ -145,6 +153,7 @@ export const Birds = ({
             ), // random perch duration
             perchedAt: 0, // time stamp that bird perched
             perchLoc: [points[rand].x, points[rand].y, points[rand].z], // determines which perch
+            flapOffset: MathUtils.randFloat(0, 10),
           })
         )
       );
@@ -152,18 +161,7 @@ export const Birds = ({
       Array.from(Array(-1 * diff)).forEach(() => birds.pop());
     }
     setBirds(birds);
-    scene.children.forEach((child, i) => {
-      if (child instanceof Mesh && child.geometry instanceof ConeGeometry)
-        if (
-          child instanceof Mesh &&
-          child.geometry instanceof ConeGeometry &&
-          parseInt(child.name) > birdNum
-        ) {
-          child.geometry?.rotateX(Math.PI / 2);
-        }
-    });
-    setBirdNum(scene.children.length);
-  }, [numberBirds, scene.children.length]);
+  }, [numberBirds]);
 
   const setNewBird = (bird: Bird) => {
     setBirds(
@@ -177,6 +175,7 @@ export const Birds = ({
 
   useFrame((state) => {
     controls.update();
+
     const birdMap = new Map<string, Bird[]>();
     const maxRange =
       Math.max(boidConstants.protectedRange, boidConstants.visualRange) * 2;
@@ -200,7 +199,7 @@ export const Birds = ({
         b
       );
       const time = state.clock.getElapsedTime();
-
+      setTime(time);
       const currentBirdPos = new Vector3(b.x, b.y, b.z);
       const pointOnPerch = new Vector3(
         b.perchLoc[0],
@@ -253,19 +252,20 @@ export const Birds = ({
         />
       </mesh>
       {birds.map((bird, i) => (
-        <mesh
-          name={bird.id.toString()}
-          key={i}
-          position={[bird.x, bird.y, bird.z]}
-          onUpdate={(self) => {
-            self.lookAt(
-              new Vector3(bird.x + bird.vx, bird.y + bird.vy, bird.z + bird.vz)
-            );
-          }}
-        >
-          <coneGeometry
-            args={[1, 5]}
+        <>
+          <mesh
+            name={bird.id.toString()}
+            key={i}
+            position={[bird.x, bird.y, bird.z]}
+            geometry={mesh?.geometry}
             onUpdate={(self) => {
+              self.lookAt(
+                new Vector3(
+                  bird.x + bird.vx,
+                  bird.y + bird.vy,
+                  bird.z + bird.vz
+                )
+              );
               const currentBirdPos = new Vector3(bird.x, bird.y, bird.z);
               const pointOnPerch = new Vector3(
                 bird.perchLoc[0],
@@ -274,7 +274,6 @@ export const Birds = ({
               );
               const dist = currentBirdPos.distanceTo(pointOnPerch);
               if (bird.action === BirdAction.PERCHED && dist > 5) {
-                self.rotateX(Math.PI / 2);
                 bird.setVXYZ(
                   MathUtils.randFloat(-2, 2),
                   MathUtils.randFloat(-2, 2),
@@ -284,14 +283,40 @@ export const Birds = ({
                 setNewBird(bird);
               }
               if (bird.action === BirdAction.PERCHING) {
-                self.rotateX(-Math.PI / 2);
                 bird.setAction(BirdAction.PERCHED);
                 setNewBird(bird);
               }
             }}
-          />
-          <meshStandardMaterial color={"blue"} />
-        </mesh>
+          >
+            <mesh
+              position={[0, 0, -0.5]}
+              rotation={
+                new Euler(
+                  0,
+                  0,
+                  Math.sin((time * 7 + Math.PI / 2) * 2 + bird.flapOffset)
+                )
+              }
+              geometry={mesh2?.geometry}
+            >
+              <meshStandardMaterial color="blue" />
+            </mesh>
+            <mesh
+              position={[0, 0, -0.5]}
+              rotation={
+                new Euler(
+                  0,
+                  0,
+                  -Math.sin((time * 7 + Math.PI / 2) * 2 + bird.flapOffset)
+                )
+              }
+              geometry={mesh3?.geometry}
+            >
+              <meshStandardMaterial color="blue" />
+            </mesh>
+            <meshStandardMaterial color={"blue"} />
+          </mesh>
+        </>
       ))}
       {wires.map((wire, i) => {
         return Array.from(Array(wire.numParallel)).map((_val, i) => (

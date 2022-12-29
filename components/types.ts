@@ -32,6 +32,7 @@ export type Bird = {
   perchDur: number; // random perch duration
   perchedAt: number; // time stamp that bird perched
   perchLoc: number[]; // determines which perch
+  flapOffset: number;
 };
 
 export type Wire = {

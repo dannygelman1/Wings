@@ -3,6 +3,7 @@ import { useFrame, useThree } from "@react-three/fiber";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import { PointLight } from "three/src/lights/PointLight";
 import {
+  BufferGeometry,
   Clock,
   Color,
   ConeGeometry,
@@ -16,6 +17,7 @@ import {
   TextureLoader,
   Vector3,
 } from "three";
+import { useGLTF } from "@react-three/drei";
 import { Euler } from "three";
 
 export const CircleCone = (): ReactElement => {
@@ -23,8 +25,8 @@ export const CircleCone = (): ReactElement => {
 
   const controls = new OrbitControls(camera, gl.domElement);
   controls.enableDamping = true;
-  controls.rotateSpeed = 0.5;
-  controls.zoomSpeed = 0.1;
+  controls.rotateSpeed = 0.005;
+  controls.zoomSpeed = 0.001;
 
   const pointLight = useRef<PointLight>(null);
   const dirLight = useRef<DirectionalLight>(null);
@@ -57,10 +59,27 @@ export const CircleCone = (): ReactElement => {
   // mesh.position.set(0, 4, 0);
   // scene.add(mesh);
 
+  const { nodes, materials, scene: birdScene } = useGLTF("/Wings/bird7.gltf");
+
+  const [bMesh] = useState<Mesh | null>(
+    nodes.bird instanceof Mesh ? nodes.bird : null
+  );
+
+  const [time, setTime] = useState<number>(0);
+
+  const [bMesh2] = useState<Mesh | null>(
+    nodes.bird001 instanceof Mesh ? nodes.bird001 : null
+  );
+
+  const [bMesh3] = useState<Mesh | null>(
+    nodes.bird002 instanceof Mesh ? nodes.bird002 : null
+  );
+
   useFrame((state, delta, xFrame) => {
     // if (state.clock.getElapsedTime() < 0.01) {
     //   mesh.current?.rotateX(Math.PI / 2);
     // }
+    setTime(state.clock.getElapsedTime());
     controls.update();
     setBoxPosition({
       ...boxPosition,
@@ -101,9 +120,9 @@ export const CircleCone = (): ReactElement => {
         <sphereGeometry args={[0.7]} />
         <meshStandardMaterial color="hotpink" />
       </mesh>
-
-      <mesh
-        position={[4, 4, 0]}
+      <primitive object={birdScene} />
+      {/* <mesh
+        position={[4, 4, 0.5]}
         ref={mesh}
         // rotation={new Euler(-Math.PI / 2, 0, 0)}
         receiveShadow={true}
@@ -129,7 +148,59 @@ export const CircleCone = (): ReactElement => {
           // rotation={new Euler(-Math.PI / 2, 0, 0)}
         />
         <meshStandardMaterial color="hotpink" />
+      </mesh> */}
+      {/* <group
+        onUpdate={(self) => {
+          self.lookAt(new Vector3(boxPosition.x, boxPosition.y, boxPosition.z));
+        }}
+      > */}
+      <mesh
+        position={[4, 4, 0]}
+        geometry={bMesh?.geometry}
+        onUpdate={(self) => {
+          self.lookAt(new Vector3(boxPosition.x, boxPosition.y, boxPosition.z));
+        }}
+      >
+        <meshStandardMaterial color="hotpink" />
+        <mesh
+          position={[0, 0, -0.5]}
+          rotation={new Euler(0, 0, Math.sin((time * 7 + Math.PI / 2) * 2))}
+          geometry={bMesh2?.geometry}
+        >
+          <meshStandardMaterial color="hotpink" />
+        </mesh>
+        <mesh
+          position={[0, 0, -0.5]}
+          rotation={new Euler(0, 0, -Math.sin((time * 7 + Math.PI / 2) * 2))}
+          geometry={bMesh3?.geometry}
+        >
+          <meshStandardMaterial color="hotpink" />
+        </mesh>
       </mesh>
+      {/* <mesh
+        position={[4, 4, 0]}
+        rotation={new Euler(0, 0, Math.sin((time + Math.PI / 4) * 2))}
+        geometry={bMesh2?.geometry}
+        onUpdate={(self) => {
+          console.log("update");
+          // self.lookAt(new Vector3(boxPosition.x, boxPosition.y, boxPosition.z));
+          // self.rotateZ(Math.sin((time + Math.PI / 4) * 2));
+        }}
+      >
+        <meshStandardMaterial color="hotpink" />
+      </mesh>
+      <mesh
+        position={[4, 4, 0]}
+        rotation={new Euler(0, 0, -Math.sin((time + Math.PI / 4) * 2))}
+        geometry={bMesh3?.geometry}
+        onUpdate={(self) => {
+          // self.rotateZ(Math.sin((time + Math.PI / 4) * 2));
+          // self.lookAt(new Vector3(boxPosition.x, boxPosition.y, boxPosition.z));
+        }}
+      >
+        <meshStandardMaterial color="hotpink" />
+      </mesh> */}
+      {/* </group> */}
     </>
   );
 };

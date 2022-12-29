@@ -15,7 +15,7 @@ export class Bird {
   perchDur: number; // random perch duration
   perchedAt: number; // time stamp that bird perched
   perchLoc: number[]; // determines which perch
-  // flag: number = 0;
+  flapOffset: number;
   constructor({
     x,
     y,
@@ -29,6 +29,7 @@ export class Bird {
     perchDur,
     perchedAt,
     perchLoc,
+    flapOffset,
   }: BirdType) {
     this.x = x;
     this.y = y;
@@ -42,6 +43,7 @@ export class Bird {
     this.perchDur = perchDur;
     this.perchedAt = perchedAt;
     this.perchLoc = perchLoc;
+    this.flapOffset = flapOffset;
   }
 
   incremXYZ(x: number, y: number, z: number): void {

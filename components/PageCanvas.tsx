@@ -1,6 +1,7 @@
 import { ReactElement, useRef, useState } from "react";
 import { Canvas } from "@react-three/fiber";
 import { Birds } from "./Birds";
+import { CircleCone } from "./CircleCone";
 import { BoidConstants } from "./types";
 import * as Slider from "@radix-ui/react-slider";
 import { AxesHelper, Color } from "three";
