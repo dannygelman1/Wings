@@ -76,14 +76,14 @@ export const PageCanvas = (): ReactElement => {
           step={1}
           onValueChange={(number: number[]) => setHeight(number[0])}
         /> */}
-        <ConstSlider
+        {/* <ConstSlider
           name="all perching"
           min={0}
           max={1}
           defaultVal={[0]}
           step={1}
           onValueChange={(number: number[]) => setAllPerching(number[0] === 1)}
-        />
+        /> */}
         <ConstSlider
           name="visual range"
           min={0}
@@ -198,6 +198,13 @@ export const PageCanvas = (): ReactElement => {
           step={0.01}
           onValueChange={(number: number[]) => setBoxOpacity(number[0])}
         />
+        <button
+          className="p-2 bg-green-500 text-white disabled:bg-green-300"
+          disabled={allPerching}
+          onClick={() => setAllPerching(true)}
+        >
+          Perch all birds
+        </button>
       </div>
       <div className="w-4/5 h-[700px] bg-black">
         <Canvas
@@ -219,6 +226,7 @@ export const PageCanvas = (): ReactElement => {
             boxOpacity={boxOpacity}
             numberBirds={numberBirds}
             allPerching={allPerching}
+            setAllPerching={setAllPerching}
           />
           {/* <primitive
             object={new AxesHelper(10).setColors(

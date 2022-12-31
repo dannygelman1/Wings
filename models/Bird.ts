@@ -1,4 +1,4 @@
-import { MathUtils } from "three";
+import { MathUtils, Vector3 } from "three";
 import { Bird as BirdType } from "../components/types";
 import { BirdAction } from "../components/types";
 
@@ -82,6 +82,18 @@ export class Bird {
     this.vz = vz;
   }
 
+  incremX(x: number): void {
+    this.x += x;
+  }
+
+  incremY(y: number): void {
+    this.y += y;
+  }
+
+  incremZ(z: number): void {
+    this.z += z;
+  }
+
   setXYZ(x: number, y: number, z: number): void {
     this.x = x;
     this.y = y;
@@ -118,5 +130,16 @@ export class Bird {
 
   getSpeed(): number {
     return (this.vx ** 2 + this.vy ** 2 + this.vz ** 2) ** 0.5;
+  }
+
+  getDistToPerch(): number {
+    const currentBirdPos = new Vector3(this.x, this.y, this.z);
+    const pointOnPerch = new Vector3(
+      this.perchLoc[0],
+      this.perchLoc[1],
+      this.perchLoc[2]
+    );
+    const dist = currentBirdPos.distanceTo(pointOnPerch);
+    return dist;
   }
 }
