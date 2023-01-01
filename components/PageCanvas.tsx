@@ -1,15 +1,12 @@
 import { ReactElement, useEffect, useRef, useState } from "react";
 import { Canvas, useThree } from "@react-three/fiber";
 import { Birds } from "./Birds";
-import { CircleCone } from "./CircleCone";
 import { BoidConstants } from "./types";
 import * as Slider from "@radix-ui/react-slider";
-import { AxesHelper, Color } from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 
 export const PageCanvas = (): ReactElement => {
   const [border, setBorder] = useState<number[]>([300, 180, 240]);
-  const [height, setHeight] = useState<number>(80);
   const [boxOpacity, setBoxOpacity] = useState<number>(0);
   const [allPerching, setAllPerching] = useState<boolean>(false);
   const [numberBirds, setNumberBirds] = useState<number>(400);
@@ -68,22 +65,6 @@ export const PageCanvas = (): ReactElement => {
             setBorder([border[0], border[1], number[0]])
           }
         />
-        {/* <ConstSlider
-          name="height"
-          min={-200}
-          max={200}
-          defaultVal={[height]}
-          step={1}
-          onValueChange={(number: number[]) => setHeight(number[0])}
-        /> */}
-        {/* <ConstSlider
-          name="all perching"
-          min={0}
-          max={1}
-          defaultVal={[0]}
-          step={1}
-          onValueChange={(number: number[]) => setAllPerching(number[0] === 1)}
-        /> */}
         <ConstSlider
           name="visual range"
           min={0}
@@ -216,25 +197,14 @@ export const PageCanvas = (): ReactElement => {
           className="bg-blue-400"
         >
           <CameraController />
-          {/* <Environment map={map} background /> */}
-          {/* <Geometry /> */}
-          {/* <CircleCone /> */}
           <Birds
             border={border}
-            height={height}
-            boidConstants={constants}
+            consts={constants}
             boxOpacity={boxOpacity}
             numberBirds={numberBirds}
             allPerching={allPerching}
             setAllPerching={setAllPerching}
           />
-          {/* <primitive
-            object={new AxesHelper(10).setColors(
-              new Color(1, 1, 1),
-              new Color(1, 0, 0),
-              new Color(0, 1, 0)
-            )}
-          /> */}
         </Canvas>
       </div>
     </div>
