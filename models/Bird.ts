@@ -16,6 +16,7 @@ export class Bird {
   perchedAt: number; // time stamp that bird perched
   perchLoc: number[]; // determines which perch
   flapOffset: number;
+  perchProb: number | undefined;
   constructor({
     x,
     y,
@@ -107,10 +108,24 @@ export class Bird {
   }
 
   move(delta: number): void {
-    console.log("delta", delta);
     this.x += this.vx * delta * 0.08;
     this.y += this.vy * delta * 0.08;
     this.z += this.vz * delta * 0.08;
+  }
+
+  setWillPerch(randomNum: number): void {
+    if (!this.perchProb) {
+      this.perchProb = randomNum;
+    }
+  }
+
+  unsetWillPerch() {
+    this.perchProb = undefined;
+  }
+
+  willPerch(): boolean {
+    if (!this.perchProb) return false;
+    return this.perchProb < 8;
   }
 
   setBias(bias: number): void {

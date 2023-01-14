@@ -128,7 +128,7 @@ export const Birds = ({
     const flyingBirds = birds.filter(
       (bird) => bird.action !== BirdAction.PERCHED
     );
-    if (flyingBirds.length < 5) setAllPerching(false);
+    if (flyingBirds.length === 0) setAllPerching(false);
   }, [birds]);
 
   useFrame((state) => {
@@ -151,11 +151,13 @@ export const Birds = ({
         b.perchLoc[2]
       );
       const dist = currentBirdPos.distanceTo(pointOnPerch);
-
+      b.setWillPerch(MathUtils.randInt(0, 100));
       if (
         (dist < 150 &&
           (time < b.perchedAt + b.perchDur ||
-            (time > maxPerchingTime * 2 && b.perchedAt === 0))) ||
+            (time > maxPerchingTime * 2 &&
+              b.perchedAt === 0 &&
+              b.willPerch()))) ||
         allPerching
       ) {
         const newPos = moveToPerch(dist, b, time, delta);
@@ -393,6 +395,7 @@ const move = (
 
   if (bird.perchedAt + bird.perchDur + 10 < time) {
     bird.setPerchedAt(0);
+    bird.unsetWillPerch();
   }
   bird.setAction(BirdAction.FLYING);
   bird.move(delta);
@@ -414,7 +417,7 @@ const moveToPerch = (
     bird.perchLoc[1],
     bird.perchLoc[2]
   );
-  if (dist > 2.8) {
+  if (dist > 1.8) {
     bird.incremVX((pointOnPerch.x - currentBirdPos.x) * 0.01);
     bird.incremVY((pointOnPerch.y - currentBirdPos.y) * 0.01);
     bird.incremVZ((pointOnPerch.z - currentBirdPos.z) * 0.01);
@@ -449,6 +452,12 @@ const moveToPerch = (
       bird.setVX((bird.vx / speed) * 2);
       bird.setVY((bird.vy / speed) * 2);
       bird.setVZ((bird.vz / speed) * 2);
+    }
+
+    if (dist < 30) {
+      bird.setVX(bird.vx * 0.6);
+      bird.setVY(bird.vy * 0.6);
+      bird.setVZ(bird.vz * 0.6);
     }
     bird.move(delta);
   } else {
