@@ -50,8 +50,9 @@ export const Birds = ({
 
   const maxPerchingTime = 10;
   const height = 80;
-
+  const t = Date.now();
   const [time, setTime] = useState<number>(0);
+  const [delta, setDelta] = useState<number>(Date.now() - t);
   const [birds, setBirds] = useState<Bird[]>([]);
   const [wires] = useState<Wire[]>(
     Array.from(Array(7)).map(() => ({
@@ -132,6 +133,7 @@ export const Birds = ({
 
   useFrame((state) => {
     setTime(state.clock.getElapsedTime());
+    setDelta(Date.now() - t);
     if (birds.length === 0) return;
 
     const grids = new Map<string, Bird[]>();
@@ -156,7 +158,7 @@ export const Birds = ({
             (time > maxPerchingTime * 2 && b.perchedAt === 0))) ||
         allPerching
       ) {
-        const newPos = moveToPerch(dist, b, time);
+        const newPos = moveToPerch(dist, b, time, delta);
         return newPos;
       } else {
         const newPos = move(
@@ -167,7 +169,8 @@ export const Birds = ({
           border,
           height,
           consts,
-          state.clock.getElapsedTime()
+          state.clock.getElapsedTime(),
+          delta
         );
         return newPos;
       }
@@ -282,7 +285,8 @@ const move = (
   bounds: number[],
   height: number,
   boidConsts: BoidConstants,
-  time: number
+  time: number,
+  delta: number
 ): Bird => {
   const currentBirdPos = new Vector3(bird.x, bird.y, bird.z);
   let xPos = 0;
@@ -391,12 +395,17 @@ const move = (
     bird.setPerchedAt(0);
   }
   bird.setAction(BirdAction.FLYING);
-  bird.move();
+  bird.move(delta);
 
   return bird;
 };
 
-const moveToPerch = (dist: number, bird: Bird, time: number): Bird => {
+const moveToPerch = (
+  dist: number,
+  bird: Bird,
+  time: number,
+  delta: number
+): Bird => {
   if (bird.action === BirdAction.PERCHED) return bird;
 
   const currentBirdPos = new Vector3(bird.x, bird.y, bird.z);
@@ -441,7 +450,7 @@ const moveToPerch = (dist: number, bird: Bird, time: number): Bird => {
       bird.setVY((bird.vy / speed) * 2);
       bird.setVZ((bird.vz / speed) * 2);
     }
-    bird.move();
+    bird.move(delta);
   } else {
     bird.setXYZ(pointOnPerch.x, pointOnPerch.y, pointOnPerch.z);
     bird.setVXYZ(0, 0, 0);

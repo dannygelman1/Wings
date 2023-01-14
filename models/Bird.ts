@@ -106,10 +106,11 @@ export class Bird {
     this.vz = vz;
   }
 
-  move(): void {
-    this.x += this.vx;
-    this.y += this.vy;
-    this.z += this.vz;
+  move(delta: number): void {
+    console.log("delta", delta);
+    this.x += this.vx * delta * 0.08;
+    this.y += this.vy * delta * 0.08;
+    this.z += this.vz * delta * 0.08;
   }
 
   setBias(bias: number): void {
