@@ -18,12 +18,8 @@ export enum BirdAction {
 }
 
 export type Bird = {
-  x: number;
-  y: number;
-  z: number;
-  vx: number;
-  vy: number;
-  vz: number;
+  pos: { x: number; y: number; z: number };
+  vel: { x: number; y: number; z: number };
   bias: number;
   id: number;
   action: BirdAction;

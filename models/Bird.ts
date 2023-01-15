@@ -3,12 +3,8 @@ import { Bird as BirdType } from "../components/types";
 import { BirdAction } from "../components/types";
 
 export class Bird {
-  x: number;
-  y: number;
-  z: number;
-  vx: number;
-  vy: number;
-  vz: number;
+  pos: { x: number; y: number; z: number };
+  vel: { x: number; y: number; z: number };
   bias: number;
   id: number;
   action: BirdAction;
@@ -18,12 +14,8 @@ export class Bird {
   flapOffset: number;
   perchProb: number | undefined;
   constructor({
-    x,
-    y,
-    z,
-    vx,
-    vy,
-    vz,
+    pos,
+    vel,
     bias,
     id,
     action,
@@ -32,12 +24,8 @@ export class Bird {
     perchLoc,
     flapOffset,
   }: BirdType) {
-    this.x = x;
-    this.y = y;
-    this.z = z;
-    this.vx = vx;
-    this.vy = vy;
-    this.vz = vz;
+    this.pos = pos;
+    this.vel = vel;
     this.bias = bias;
     this.id = id;
     this.action = action;
@@ -48,69 +36,65 @@ export class Bird {
   }
 
   incremXYZ(x: number, y: number, z: number): void {
-    this.x += x;
-    this.y += y;
-    this.z += z;
+    this.pos.x += x;
+    this.pos.y += y;
+    this.pos.z += z;
   }
 
   incremVXYZ(vx: number, vy: number, vz: number): void {
-    this.vx += vx;
-    this.vy += vy;
-    this.vz += vz;
+    this.vel.x += vx;
+    this.vel.y += vy;
+    this.vel.z += vz;
   }
 
   incremVX(vx: number): void {
-    this.vx += vx;
+    this.vel.x += vx;
   }
 
   incremVY(vy: number): void {
-    this.vy += vy;
+    this.vel.y += vy;
   }
 
   incremVZ(vz: number): void {
-    this.vz += vz;
+    this.vel.z += vz;
   }
 
   setVX(vx: number): void {
-    this.vx = vx;
+    this.vel.x = vx;
   }
 
   setVY(vy: number): void {
-    this.vy = vy;
+    this.vel.y = vy;
   }
 
   setVZ(vz: number): void {
-    this.vz = vz;
+    this.vel.z = vz;
   }
 
   incremX(x: number): void {
-    this.x += x;
+    this.pos.x += x;
   }
 
   incremY(y: number): void {
-    this.y += y;
+    this.pos.y += y;
   }
 
   incremZ(z: number): void {
-    this.z += z;
+    this.pos.z += z;
   }
 
-  setXYZ(x: number, y: number, z: number): void {
-    this.x = x;
-    this.y = y;
-    this.z = z;
+  setXYZ(pos: { x: number; y: number; z: number }): void {
+    this.pos = pos;
   }
 
-  setVXYZ(vx: number, vy: number, vz: number): void {
-    this.vx = vx;
-    this.vy = vy;
-    this.vz = vz;
+  setVXYZ(vel: { x: number; y: number; z: number }): void {
+    this.vel = vel;
   }
 
   move(delta: number): void {
-    this.x += this.vx * delta * 0.08;
-    this.y += this.vy * delta * 0.08;
-    this.z += this.vz * delta * 0.08;
+    this.pos.x += this.vel.x * delta * 0.08;
+    this.pos.y += this.vel.y * delta * 0.08;
+    this.pos.z += this.vel.z * delta * 0.08;
   }
 
   setWillPerch(randomNum: number): void {
@@ -141,22 +125,22 @@ export class Bird {
   }
 
   getSpeed(): number {
-    return (this.vx ** 2 + this.vy ** 2 + this.vz ** 2) ** 0.5;
+    return (this.vel.x ** 2 + this.vel.y ** 2 + this.vel.z ** 2) ** 0.5;
   }
 
   getGrid(maxRange: number): number[] {
     return [
-      floor(this.x / maxRange) * maxRange,
-      floor(this.y / maxRange) * maxRange,
-      floor(this.z / maxRange) * maxRange,
+      floor(this.pos.x / maxRange) * maxRange,
+      floor(this.pos.y / maxRange) * maxRange,
+      floor(this.pos.z / maxRange) * maxRange,
     ];
   }
 
   getNeighbors(maxRange: number): string[] {
     const birdGrid = this.getGrid(maxRange);
-    const x = this.x;
-    const y = this.y;
-    const z = this.z;
+    const x = this.pos.x;
+    const y = this.pos.y;
+    const z = this.pos.z;
     const midX = birdGrid[0] + maxRange / 2;
     const midY = birdGrid[1] + maxRange / 2;
     const midZ = birdGrid[2] + maxRange / 2;
