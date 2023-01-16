@@ -79,4 +79,8 @@ export class Vector {
       0.5
     );
   }
+
+  xyz(): Vector {
+    return new Vector({ x: this.x, y: this.y, z: this.z });
+  }
 }

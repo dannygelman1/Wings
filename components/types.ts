@@ -27,7 +27,7 @@ export type Bird = {
   action: BirdAction;
   perchDur: number; // random perch duration
   perchedAt: number; // time stamp that bird perched
-  perchLoc: number[]; // determines which perch
+  perchLoc: Vector; // determines which perch
   flapOffset: number;
 };
 

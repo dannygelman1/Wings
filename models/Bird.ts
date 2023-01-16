@@ -11,7 +11,7 @@ export class Bird {
   action: BirdAction;
   perchDur: number; // random perch duration
   perchedAt: number; // time stamp that bird perched
-  perchLoc: number[]; // determines which perch
+  perchLoc: Vector; // determines which perch
   flapOffset: number;
   perchProb: number | undefined;
   constructor({
@@ -81,11 +81,11 @@ export class Bird {
   }
 
   setXYZ(pos: Vector): void {
-    this.pos = pos;
+    this.pos = new Vector({ x: pos.x, y: pos.y, z: pos.z });
   }
 
   setVXYZ(vel: Vector): void {
-    this.vel = vel;
+    this.vel = new Vector({ x: vel.x, y: vel.y, z: vel.z });
   }
 
   move(delta: number): void {

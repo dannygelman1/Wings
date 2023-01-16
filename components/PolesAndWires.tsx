@@ -1,42 +1,22 @@
-import {
-  Dispatch,
-  ReactElement,
-  SetStateAction,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
-import { useFrame, useThree } from "@react-three/fiber";
-import { PointLight } from "three/src/lights/PointLight";
-import {
-  Color,
-  DirectionalLight,
-  Vector3,
-  MathUtils,
-  Mesh,
-  BoxGeometry,
-  DoubleSide,
-  EllipseCurve,
-  Euler,
-  Vector4,
-} from "three";
-import floor from "lodash-es/floor";
-import { BirdAction, BoidConstants, Wire } from "./types";
-import { Line, useGLTF } from "@react-three/drei";
-import { Bird } from "../models/Bird";
+import { ReactElement, useState } from "react";
+import { Color, Vector3, EllipseCurve, Euler } from "three";
+import { Wire } from "./types";
+import { Line } from "@react-three/drei";
+import { Vector } from "../models/Vector";
+import { ellipsePoints } from "./util";
 
 interface PolesAndWiresProps {
   wires: Wire[];
-  points: Vector4[];
+  points: Vector[];
 }
 export const PolesAndWires = ({
   wires,
   points,
 }: PolesAndWiresProps): ReactElement => {
-  const [plankPos] = useState<Map<number, Vector3[]>>(
+  const [plankPos] = useState<Map<number, Vector[]>>(
     getHorizontalPlankPos(wires, points)
   );
-  const [wireEndPos] = useState<Map<string, Vector3[]>>(
+  const [wireEndPos] = useState<Map<string, Vector[]>>(
     getWireEndPoints(wires, points)
   );
   return (
@@ -45,34 +25,9 @@ export const PolesAndWires = ({
         return Array.from(Array(wire.numParallel)).map((_val, i) => (
           <Line
             key={wire.ax + wire.ay + i}
-            points={new EllipseCurve(
-              wire.ax,
-              wire.ay,
-              wire.xRadius,
-              wire.yRadius,
-              Math.PI + Math.PI / 8,
-              0 - Math.PI / 8,
-              false,
-              0
-            )
-              .getPoints(50)
-              .map(
-                (point) =>
-                  new Vector3(
-                    point.x,
-                    point.y,
-                    i === 0
-                      ? wire.zTranslate
-                      : i === 1
-                      ? wire.spacing % 2 === 0
-                        ? wire.zTranslate + wire.spacing
-                        : wire.zTranslate + wire.spacing / 2
-                      : wire.zTranslate + wire.spacing * 2
-                  )
-              )}
+            points={ellipsePoints(i, wire)}
             color="blue"
             lineWidth={1}
-            rotation={new Euler(0, wire.rotation, 0)}
           />
         ));
       })}
@@ -148,9 +103,9 @@ export const PolesAndWires = ({
 
 const getHorizontalPlankPos = (
   wires: Wire[],
-  points: Vector4[]
-): Map<number, Vector3[]> => {
-  const enpointMap = new Map<number, Vector3[]>();
+  points: Vector[]
+): Map<number, Vector[]> => {
+  const enpointMap = new Map<number, Vector[]>();
   let runningStart = 0;
   let runningEnd = 0;
   for (let i = 0; i < wires.length; i++) {
@@ -162,13 +117,13 @@ const getHorizontalPlankPos = (
     const end = points[runningEnd];
     if (wires[i].rotation === 0) {
       const averageZ = (start.z + end.z) / 2;
-      const newStart = new Vector3(start.x, start.y, averageZ);
-      const newEnd = new Vector3(end.x, end.y, averageZ);
+      const newStart = new Vector({ x: start.x, y: start.y, z: averageZ });
+      const newEnd = new Vector({ x: end.x, y: end.y, z: averageZ });
       enpointMap.set(i, [newStart, newEnd]);
     } else {
       const averageX = (start.x + end.x) / 2;
-      const newStart = new Vector3(averageX, start.y, start.z);
-      const newEnd = new Vector3(averageX, end.y, end.z);
+      const newStart = new Vector({ x: averageX, y: start.y, z: start.z });
+      const newEnd = new Vector({ x: averageX, y: end.y, z: end.z });
       enpointMap.set(i, [newStart, newEnd]);
     }
   }
@@ -178,9 +133,9 @@ const getHorizontalPlankPos = (
 
 const getWireEndPoints = (
   wires: Wire[],
-  points: Vector4[]
-): Map<string, Vector3[]> => {
-  const enpointMap = new Map<string, Vector3[]>();
+  points: Vector[]
+): Map<string, Vector[]> => {
+  const enpointMap = new Map<string, Vector[]>();
   let runningStart = 0;
   let runningEnd = 0;
   for (let i = 0; i < wires.length; i++) {
@@ -188,16 +143,8 @@ const getWireEndPoints = (
       runningStart = i === 0 && j === 0 ? 0 : runningEnd + 1;
       runningEnd = runningStart + 50;
       enpointMap.set(JSON.stringify([i, j]), [
-        new Vector3(
-          points[runningStart].x,
-          points[runningStart].y,
-          points[runningStart].z
-        ),
-        new Vector3(
-          points[runningEnd].x,
-          points[runningEnd].y,
-          points[runningEnd].z
-        ),
+        points[runningStart],
+        points[runningEnd],
       ]);
     }
   }
