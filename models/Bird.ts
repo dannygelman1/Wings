@@ -1,10 +1,11 @@
 import floor from "lodash-es/floor";
 import { Bird as BirdType } from "../components/types";
 import { BirdAction } from "../components/types";
+import { Vector } from "./Vector";
 
 export class Bird {
-  pos: { x: number; y: number; z: number };
-  vel: { x: number; y: number; z: number };
+  pos: Vector;
+  vel: Vector;
   bias: number;
   id: number;
   action: BirdAction;
@@ -36,65 +37,65 @@ export class Bird {
   }
 
   incremXYZ(x: number, y: number, z: number): void {
-    this.pos.x += x;
-    this.pos.y += y;
-    this.pos.z += z;
+    this.pos.add(new Vector({ x, y, z }));
   }
 
-  incremVXYZ(vx: number, vy: number, vz: number): void {
-    this.vel.x += vx;
-    this.vel.y += vy;
-    this.vel.z += vz;
+  incremVXYZ(vec: Vector): void {
+    this.vel.add(vec);
   }
 
   incremVX(vx: number): void {
-    this.vel.x += vx;
+    this.vel.addX(vx);
   }
 
   incremVY(vy: number): void {
-    this.vel.y += vy;
+    this.vel.addY(vy);
   }
 
   incremVZ(vz: number): void {
-    this.vel.z += vz;
+    this.vel.addZ(vz);
   }
 
   setVX(vx: number): void {
-    this.vel.x = vx;
+    this.vel.setX(vx);
   }
 
   setVY(vy: number): void {
-    this.vel.y = vy;
+    this.vel.setY(vy);
   }
 
   setVZ(vz: number): void {
-    this.vel.z = vz;
+    this.vel.setZ(vz);
   }
 
   incremX(x: number): void {
-    this.pos.x += x;
+    this.pos.addX(x);
   }
 
   incremY(y: number): void {
-    this.pos.y += y;
+    this.pos.addY(y);
   }
 
   incremZ(z: number): void {
-    this.pos.z += z;
+    this.pos.addZ(z);
   }
 
-  setXYZ(pos: { x: number; y: number; z: number }): void {
-    this.pos = pos;
+  setXYZ(x: number, y: number, z: number): void {
+    this.pos = new Vector({ x, y, z });
   }
 
-  setVXYZ(vel: { x: number; y: number; z: number }): void {
-    this.vel = vel;
+  setVXYZ(vx: number, vy: number, vz: number): void {
+    this.vel = new Vector({ x: vx, y: vy, z: vz });
   }
 
   move(delta: number): void {
-    this.pos.x += this.vel.x * delta * 0.08;
-    this.pos.y += this.vel.y * delta * 0.08;
-    this.pos.z += this.vel.z * delta * 0.08;
+    this.pos.add(
+      new Vector({
+        x: this.vel.x * delta * 0.08,
+        y: this.vel.y * delta * 0.08,
+        z: this.vel.z * delta * 0.08,
+      })
+    );
   }
 
   setWillPerch(randomNum: number): void {

@@ -25,6 +25,7 @@ import { PolesAndWires } from "./PolesAndWires";
 import { BirdAction, BoidConstants, Wire } from "./types";
 import { Line, useGLTF } from "@react-three/drei";
 import { Bird } from "../models/Bird";
+import { Vector } from "../models/Vector";
 
 interface BirdsProps {
   border: number[];
@@ -93,12 +94,16 @@ export const Birds = ({
         const rand = findNewRandomNum(usedPositions, points.length);
         birds.push(
           new Bird({
-            pos: { x: points[rand].x, y: points[rand].y, z: points[rand].z },
-            vel: {
+            pos: new Vector({
+              x: points[rand].x,
+              y: points[rand].y,
+              z: points[rand].z,
+            }),
+            vel: new Vector({
               x: MathUtils.randFloat(-2, 2),
               y: MathUtils.randFloat(-2, 2),
               z: MathUtils.randFloat(-2, 2),
-            },
+            }),
             bias: 0,
             id: birds.length,
             action: BirdAction.PERCHED,
@@ -286,20 +291,14 @@ const move = (
   bird: Bird,
   bounds: number[],
   height: number,
-  boidConsts: BoidConstants,
+  consts: BoidConstants,
   time: number,
   delta: number
 ): Bird => {
   const currentBirdPos = new Vector3(bird.pos.x, bird.pos.y, bird.pos.z);
-  let xPos = 0;
-  let yPos = 0;
-  let zPos = 0;
-  let xVel = 0;
-  let yVel = 0;
-  let zVel = 0;
-  let closeX = 0;
-  let closeY = 0;
-  let closeZ = 0;
+  let pos = new Vector({ x: 0, y: 0, z: 0 });
+  let vel = new Vector({ x: 0, y: 0, z: 0 });
+  let close = new Vector({ x: 0, y: 0, z: 0 });
   let neighbors = 0;
 
   for (const neighbor of bird.getNeighbors(maxRange)) {
@@ -307,38 +306,23 @@ const move = (
     for (const nbirds of birdMap.get(neighbor) || []) {
       if (nbirds.id !== bird.id) {
         const nBirdPos = new Vector3(nbirds.pos.x, nbirds.pos.y, nbirds.pos.z);
-        if (currentBirdPos.distanceTo(nBirdPos) < boidConsts.visualRange) {
-          xPos += nbirds.pos.x;
-          yPos += nbirds.pos.y;
-          zPos += nbirds.pos.z;
-          xVel += nbirds.vel.x;
-          yVel += nbirds.vel.y;
-          zVel += nbirds.vel.z;
+        if (currentBirdPos.distanceTo(nBirdPos) < consts.visualRange) {
+          pos.add(nbirds.pos);
+          vel.add(nbirds.vel);
           neighbors += 1;
         }
-        if (currentBirdPos.distanceTo(nBirdPos) < boidConsts.protectedRange) {
-          closeX += currentBirdPos.x - nBirdPos.x;
-          closeY += currentBirdPos.y - nBirdPos.y;
-          closeZ += currentBirdPos.z - nBirdPos.z;
+        if (currentBirdPos.distanceTo(nBirdPos) < consts.protectedRange) {
+          close.add(bird.pos.diff(nbirds.pos));
         }
       }
     }
   }
   if (neighbors > 0) {
-    bird.incremVXYZ(
-      (xPos / neighbors - bird.pos.x) * boidConsts.centeringFactor +
-        (xVel / neighbors - bird.vel.x) * boidConsts.matchingFactor,
-      (yPos / neighbors - bird.pos.y) * boidConsts.centeringFactor +
-        (yVel / neighbors - bird.vel.y) * boidConsts.matchingFactor,
-      (zPos / neighbors - bird.pos.z) * boidConsts.centeringFactor +
-        (zVel / neighbors - bird.vel.z) * boidConsts.matchingFactor
-    );
+    const centering = pos.div(neighbors).diff(bird.pos).prod(consts.centering);
+    const matching = vel.div(neighbors).diff(bird.vel).prod(consts.matching);
+    bird.incremVXYZ(centering.sum(matching));
   }
-  bird.incremVXYZ(
-    closeX * boidConsts.avoidFactor,
-    closeY * boidConsts.avoidFactor,
-    closeZ * boidConsts.avoidFactor
-  );
+  bird.incremVXYZ(close.prod(consts.avoid));
 
   const right = bounds[0] / 2;
   const left = (-1 * bounds[0]) / 2;
@@ -346,32 +330,22 @@ const move = (
   const down = (-1 * bounds[1]) / 2 + height;
   const front = bounds[2] / 2;
   const back = (-1 * bounds[2]) / 2;
-  if (bird.pos.x > right) bird.incremVX(-1 * boidConsts.turnFactor);
-  if (bird.pos.x < left) bird.incremVX(boidConsts.turnFactor);
-  if (bird.pos.y > up) bird.incremVY(-1 * boidConsts.turnFactor);
-  if (bird.pos.y < down) bird.incremVY(boidConsts.turnFactor);
-  if (bird.pos.z > front) bird.incremVZ(-1 * boidConsts.turnFactor);
-  if (bird.pos.z < back) bird.incremVZ(boidConsts.turnFactor);
+  if (bird.pos.x > right) bird.incremVX(-1 * consts.turnFactor);
+  if (bird.pos.x < left) bird.incremVX(consts.turnFactor);
+  if (bird.pos.y > up) bird.incremVY(-1 * consts.turnFactor);
+  if (bird.pos.y < down) bird.incremVY(consts.turnFactor);
+  if (bird.pos.z > front) bird.incremVZ(-1 * consts.turnFactor);
+  if (bird.pos.z < back) bird.incremVZ(consts.turnFactor);
 
   if (inBiasGroup1(bird.id, birds.length)) {
     if (bird.vel.x > 0)
-      bird.setBias(
-        Math.min(boidConsts.maxBias, bird.bias + boidConsts.biasIncrm)
-      );
-    else
-      bird.setBias(
-        Math.max(boidConsts.biasIncrm, bird.bias - boidConsts.biasIncrm)
-      );
+      bird.setBias(Math.min(consts.maxBias, bird.bias + consts.biasIncrm));
+    else bird.setBias(Math.max(consts.biasIncrm, bird.bias - consts.biasIncrm));
   }
   if (inBiasGroup2(bird.id, birds.length)) {
     if (bird.vel.x < 0)
-      bird.setBias(
-        Math.min(boidConsts.maxBias, bird.bias + boidConsts.biasIncrm)
-      );
-    else
-      bird.setBias(
-        Math.max(boidConsts.biasIncrm, bird.bias - boidConsts.biasIncrm)
-      );
+      bird.setBias(Math.min(consts.maxBias, bird.bias + consts.biasIncrm));
+    else bird.setBias(Math.max(consts.biasIncrm, bird.bias - consts.biasIncrm));
   }
 
   if (inBiasGroup1(bird.id, birds.length)) {
@@ -382,15 +356,15 @@ const move = (
   }
 
   const speed = bird.getSpeed();
-  if (speed < boidConsts.minSpeed) {
-    bird.setVX((bird.vel.x / speed) * boidConsts.minSpeed);
-    bird.setVY((bird.vel.y / speed) * boidConsts.minSpeed);
-    bird.setVZ((bird.vel.z / speed) * boidConsts.minSpeed);
+  if (speed < consts.minSpeed) {
+    bird.setVX((bird.vel.x / speed) * consts.minSpeed);
+    bird.setVY((bird.vel.y / speed) * consts.minSpeed);
+    bird.setVZ((bird.vel.z / speed) * consts.minSpeed);
   }
-  if (speed > boidConsts.maxSpeed) {
-    bird.setVX((bird.vel.x / speed) * boidConsts.maxSpeed);
-    bird.setVY((bird.vel.y / speed) * boidConsts.maxSpeed);
-    bird.setVZ((bird.vel.z / speed) * boidConsts.maxSpeed);
+  if (speed > consts.maxSpeed) {
+    bird.setVX((bird.vel.x / speed) * consts.maxSpeed);
+    bird.setVY((bird.vel.y / speed) * consts.maxSpeed);
+    bird.setVZ((bird.vel.z / speed) * consts.maxSpeed);
   }
 
   if (bird.perchedAt + bird.perchDur + 10 < time) {
@@ -461,8 +435,8 @@ const moveToPerch = (
     }
     bird.move(delta);
   } else {
-    bird.setXYZ({ x: pointOnPerch.x, y: pointOnPerch.y, z: pointOnPerch.z });
-    bird.setVXYZ({ x: 0, y: 0, z: 0 });
+    bird.setXYZ(pointOnPerch.x, pointOnPerch.y, pointOnPerch.z);
+    bird.setVXYZ(0, 0, 0);
     bird.setAction(BirdAction.PERCHED);
     bird.setPerchedAt(time);
   }
@@ -470,7 +444,7 @@ const moveToPerch = (
 };
 
 const getPointsFromWires = (wires: Wire[]): Vector4[] => {
-  const allPoints: Vector4[] = [];
+  let allPoints: Vector4[] = [];
   for (const wire of wires) {
     for (let i = 0; i < wire.numParallel; i++) {
       const points = new EllipseCurve(
@@ -484,36 +458,27 @@ const getPointsFromWires = (wires: Wire[]): Vector4[] => {
         0
       )
         .getPoints(50)
-        .map(
-          (point) =>
-            new Vector3(
-              point.x,
-              point.y,
-              i === 0
-                ? wire.zTranslate
-                : i === 1
-                ? wire.spacing % 2 === 0
-                  ? wire.zTranslate + wire.spacing
-                  : wire.zTranslate + wire.spacing / 2
-                : wire.zTranslate + wire.spacing * 2
-            )
-        );
-      for (const point of points) {
-        const pointOnWire = new Vector3(point.x, point.y, point.z).applyEuler(
-          new Euler(0, wire.rotation, 0)
-        );
-        allPoints.push(
-          new Vector4(
-            pointOnWire.x,
-            pointOnWire.y,
-            pointOnWire.z,
-            wire.rotation === 0 ? 0 : 1
+        .map((point) =>
+          new Vector3(point.x, point.y, getZ(i, wire)).applyEuler(
+            new Euler(0, wire.rotation, 0)
           )
-        );
-      }
+        )
+        .map((point) => new Vector4(point.x, point.y, point.z, wire.rotation));
+      allPoints = allPoints.concat(points);
     }
   }
   return allPoints;
+};
+
+const getZ = (i: number, wire: Wire): number => {
+  //first wire
+  if (i === 0) return wire.zTranslate;
+  //second wire
+  if (i === 1) {
+    if (wire.spacing % 2 === 0) return wire.zTranslate + wire.spacing;
+    else return wire.zTranslate + wire.spacing / 2;
+    //third wire
+  } else return wire.zTranslate + wire.spacing * 2;
 };
 
 const findNewRandomNum = (

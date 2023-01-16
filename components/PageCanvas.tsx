@@ -14,9 +14,9 @@ export const PageCanvas = (): ReactElement => {
     turnfactor: 0.2,
     visualRange: 40,
     protectedRange: 4,
-    centeringFactor: 0.0005,
-    avoidFactor: 0.05,
-    matchingFactor: 0.05,
+    centering: 0.0005,
+    avoid: 0.05,
+    matching: 0.05,
     maxSpeed: 4,
     minSpeed: 2,
     turnFactor: 0.2,
@@ -95,12 +95,12 @@ export const PageCanvas = (): ReactElement => {
           name="centering factor"
           min={0}
           max={0.01}
-          defaultVal={[constants.centeringFactor]}
+          defaultVal={[constants.centering]}
           step={0.0001}
           onValueChange={(number: number[]) =>
             setConstants({
               ...constants,
-              centeringFactor: number[0],
+              centering: number[0],
             })
           }
         />
@@ -108,12 +108,12 @@ export const PageCanvas = (): ReactElement => {
           name="avoid factor"
           min={0}
           max={0.1}
-          defaultVal={[constants.avoidFactor]}
+          defaultVal={[constants.avoid]}
           step={0.001}
           onValueChange={(number: number[]) =>
             setConstants({
               ...constants,
-              avoidFactor: number[0],
+              avoid: number[0],
             })
           }
         />
@@ -121,12 +121,12 @@ export const PageCanvas = (): ReactElement => {
           name="matching factor"
           min={0}
           max={0.1}
-          defaultVal={[constants.matchingFactor]}
+          defaultVal={[constants.matching]}
           step={0.001}
           onValueChange={(number: number[]) =>
             setConstants({
               ...constants,
-              matchingFactor: number[0],
+              matching: number[0],
             })
           }
         />

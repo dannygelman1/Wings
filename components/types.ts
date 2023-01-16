@@ -1,10 +1,12 @@
+import { Vector } from "../models/Vector";
+
 export type BoidConstants = {
   turnfactor: number;
   visualRange: number;
   protectedRange: number;
-  centeringFactor: number;
-  avoidFactor: number;
-  matchingFactor: number;
+  centering: number;
+  avoid: number;
+  matching: number;
   turnFactor: number;
   maxSpeed: number;
   minSpeed: number;
@@ -18,8 +20,8 @@ export enum BirdAction {
 }
 
 export type Bird = {
-  pos: { x: number; y: number; z: number };
-  vel: { x: number; y: number; z: number };
+  pos: Vector;
+  vel: Vector;
   bias: number;
   id: number;
   action: BirdAction;
