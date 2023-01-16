@@ -17,6 +17,30 @@ export class Vector {
     this.z += vec.z;
   }
 
+  addX(x: number) {
+    this.x += x;
+  }
+
+  addY(y: number) {
+    this.y += y;
+  }
+
+  addZ(z: number) {
+    this.z += z;
+  }
+
+  setX(x: number) {
+    this.x = x;
+  }
+
+  setY(y: number) {
+    this.y = y;
+  }
+
+  setZ(z: number) {
+    this.z = z;
+  }
+
   diff(vec: Vector): Vector {
     return new Vector({
       x: this.x - vec.x,
@@ -49,27 +73,10 @@ export class Vector {
     });
   }
 
-  addX(x: number) {
-    this.x += x;
-  }
-
-  addY(y: number) {
-    this.y += y;
-  }
-
-  addZ(z: number) {
-    this.z += z;
-  }
-
-  setX(x: number) {
-    this.x = x;
-  }
-
-  setY(y: number) {
-    this.y = y;
-  }
-
-  setZ(z: number) {
-    this.z = z;
+  distanceTo(vec: Vector): number {
+    return (
+      ((vec.x - this.x) ** 2 + (vec.y - this.y) ** 2 + (vec.z - this.z) ** 2) **
+      0.5
+    );
   }
 }

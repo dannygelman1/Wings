@@ -356,16 +356,10 @@ const move = (
   }
 
   const speed = bird.getSpeed();
-  if (speed < consts.minSpeed) {
-    bird.setVX((bird.vel.x / speed) * consts.minSpeed);
-    bird.setVY((bird.vel.y / speed) * consts.minSpeed);
-    bird.setVZ((bird.vel.z / speed) * consts.minSpeed);
-  }
-  if (speed > consts.maxSpeed) {
-    bird.setVX((bird.vel.x / speed) * consts.maxSpeed);
-    bird.setVY((bird.vel.y / speed) * consts.maxSpeed);
-    bird.setVZ((bird.vel.z / speed) * consts.maxSpeed);
-  }
+  if (speed < consts.minSpeed)
+    bird.setVXYZ(bird.vel.div(speed).prod(consts.minSpeed));
+  if (speed > consts.maxSpeed)
+    bird.setVXYZ(bird.vel.div(speed).prod(consts.maxSpeed));
 
   if (bird.perchedAt + bird.perchDur + 10 < time) {
     bird.setPerchedAt(0);
@@ -422,21 +416,20 @@ const moveToPerch = (
     }
 
     const speed = bird.getSpeed();
-    if (speed > 2) {
-      bird.setVX((bird.vel.x / speed) * 2);
-      bird.setVY((bird.vel.y / speed) * 2);
-      bird.setVZ((bird.vel.z / speed) * 2);
-    }
+    if (speed > 2) bird.setVXYZ(bird.vel.div(speed).prod(2));
 
-    if (dist < 30) {
-      bird.setVX(bird.vel.x * 0.6);
-      bird.setVY(bird.vel.y * 0.6);
-      bird.setVZ(bird.vel.z * 0.6);
-    }
+    if (dist < 30) bird.setVXYZ(bird.vel.prod(0.6));
+
     bird.move(delta);
   } else {
-    bird.setXYZ(pointOnPerch.x, pointOnPerch.y, pointOnPerch.z);
-    bird.setVXYZ(0, 0, 0);
+    bird.setXYZ(
+      new Vector({
+        x: bird.perchLoc[0],
+        y: bird.perchLoc[1],
+        z: bird.perchLoc[2],
+      })
+    );
+    bird.setVXYZ(new Vector({ x: 0, y: 0, z: 0 }));
     bird.setAction(BirdAction.PERCHED);
     bird.setPerchedAt(time);
   }

@@ -80,12 +80,12 @@ export class Bird {
     this.pos.addZ(z);
   }
 
-  setXYZ(x: number, y: number, z: number): void {
-    this.pos = new Vector({ x, y, z });
+  setXYZ(pos: Vector): void {
+    this.pos = pos;
   }
 
-  setVXYZ(vx: number, vy: number, vz: number): void {
-    this.vel = new Vector({ x: vx, y: vy, z: vz });
+  setVXYZ(vel: Vector): void {
+    this.vel = vel;
   }
 
   move(delta: number): void {
