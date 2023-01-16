@@ -1,5 +1,5 @@
 import { ReactElement, useState } from "react";
-import { Color, Vector3, EllipseCurve, Euler } from "three";
+import { Color, Euler } from "three";
 import { Wire } from "./types";
 import { Line } from "@react-three/drei";
 import { Vector } from "../models/Vector";
@@ -21,16 +21,16 @@ export const PolesAndWires = ({
   );
   return (
     <>
-      {wires.map((wire, i) => {
-        return Array.from(Array(wire.numParallel)).map((_val, i) => (
+      {wires.map((wire) =>
+        Array.from(Array(wire.numParallel)).map((_val, i) => (
           <Line
             key={wire.ax + wire.ay + i}
             points={ellipsePoints(i, wire)}
             color="blue"
             lineWidth={1}
           />
-        ));
-      })}
+        ))
+      )}
       {wires.map((wire, i) => {
         const pos = plankPos.get(i);
         if (!pos) return <></>;
@@ -40,34 +40,14 @@ export const PolesAndWires = ({
               position={[pos[0].x, pos[0].y - 8, pos[0].z]}
               rotation={new Euler(0, wire.rotation + Math.PI / 2, 0)}
             >
-              <boxGeometry
-                args={[
-                  wire.numParallel === 1
-                    ? 10
-                    : wire.numParallel === 2
-                    ? wire.spacing * 1.5
-                    : wire.spacing * 3,
-                  3,
-                  3,
-                ]}
-              />
+              <boxGeometry args={[getPlankLength(wire), 3, 3]} />
               <meshStandardMaterial color="gray" />
             </mesh>
             <mesh
               position={[pos[1].x, pos[1].y - 8, pos[1].z]}
               rotation={new Euler(0, wire.rotation + Math.PI / 2, 0)}
             >
-              <boxGeometry
-                args={[
-                  wire.numParallel === 1
-                    ? 10
-                    : wire.numParallel === 2
-                    ? wire.spacing * 1.5
-                    : wire.spacing * 3,
-                  3,
-                  3,
-                ]}
-              />
+              <boxGeometry args={[getPlankLength(wire), 3, 3]} />
               <meshStandardMaterial color="gray" />
             </mesh>
             <mesh position={[pos[0].x, pos[0].y - 150, pos[0].z]}>
@@ -150,4 +130,10 @@ const getWireEndPoints = (
   }
 
   return enpointMap;
+};
+
+const getPlankLength = (wire: Wire): number => {
+  if (wire.numParallel === 1) return 10;
+  else if (wire.numParallel === 2) return wire.spacing * 1.5;
+  else return wire.spacing * 3;
 };

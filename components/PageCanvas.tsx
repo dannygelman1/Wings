@@ -1,4 +1,4 @@
-import { ReactElement, useEffect, useRef, useState } from "react";
+import { ReactElement, useEffect, useState } from "react";
 import { Canvas, useThree } from "@react-three/fiber";
 import { Birds } from "./Birds";
 import { BoidConstants } from "./types";

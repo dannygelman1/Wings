@@ -10,20 +10,17 @@ import { useFrame, useThree } from "@react-three/fiber";
 import { PointLight } from "three/src/lights/PointLight";
 import {
   Color,
-  DirectionalLight,
   Vector3,
   MathUtils,
   Mesh,
   BoxGeometry,
   DoubleSide,
-  EllipseCurve,
   Euler,
-  Vector4,
 } from "three";
 import floor from "lodash-es/floor";
 import { PolesAndWires } from "./PolesAndWires";
 import { BirdAction, BoidConstants, Wire } from "./types";
-import { Line, useGLTF } from "@react-three/drei";
+import { useGLTF } from "@react-three/drei";
 import { Bird } from "../models/Bird";
 import { Vector } from "../models/Vector";
 import { ellipsePoints } from "./util";
@@ -143,6 +140,7 @@ export const Birds = ({
 
       const dist = b.pos.distanceTo(b.perchLoc);
       b.setWillPerch(MathUtils.randInt(0, 100));
+
       if (
         (dist < 150 &&
           (time < b.perchedAt + b.perchDur ||
@@ -194,67 +192,29 @@ export const Birds = ({
             key={"fly" + bird.id.toString()}
             position={[bird.pos.x, bird.pos.y, bird.pos.z]}
             geometry={mesh?.geometry}
-            onUpdate={(self) => {
-              self.lookAt(
-                new Vector3(
-                  bird.pos.x + bird.vel.x,
-                  bird.pos.y + bird.vel.y,
-                  bird.pos.z + bird.vel.z
-                )
-              );
-            }}
+            onUpdate={(self) => self.lookAt(lookAt(bird, delta))}
           >
             <mesh
               position={[0, 0, -0.5]}
-              rotation={
-                new Euler(
-                  0,
-                  0,
-                  Math.sin((time * 7 + Math.PI / 2) * 2 + bird.flapOffset)
-                )
-              }
+              rotation={new Euler(0, 0, wingAnimation(bird, time, 1))}
               geometry={mesh2?.geometry}
             >
               <meshStandardMaterial color="blue" />
             </mesh>
             <mesh
               position={[0, 0, -0.5]}
-              rotation={
-                new Euler(
-                  0,
-                  0,
-                  -Math.sin((time * 7 + Math.PI / 2) * 2 + bird.flapOffset)
-                )
-              }
+              rotation={new Euler(0, 0, wingAnimation(bird, time, -1))}
               geometry={mesh3?.geometry}
             >
               <meshStandardMaterial color="blue" />
             </mesh>
-            <meshStandardMaterial color={"blue"} />
+            <meshStandardMaterial color="blue" />
           </mesh>
         ) : (
           <mesh
             key={"perch" + bird.id.toString()}
-            position={
-              new Vector3(
-                bird.perchLoc.x,
-                bird.perchLoc.y - 0.7,
-                bird.perchLoc.z
-              )
-            }
-            rotation={
-              new Euler(
-                0,
-                bird.perchLoc.w !== 0
-                  ? floor(bird.perchDur) % 2 === 0
-                    ? Math.PI / 2
-                    : -Math.PI / 2
-                  : floor(bird.perchDur) % 2 === 0
-                  ? 0
-                  : Math.PI,
-                0
-              )
-            }
+            position={perchPos(bird)}
+            rotation={new Euler(0, perchRotation(bird), 0)}
             geometry={perch?.geometry}
           >
             <meshStandardMaterial color="blue" />
@@ -435,5 +395,31 @@ const findNewRandomNum = (
     return rand;
   } else {
     return findNewRandomNum(usedPositions, numberPoints);
+  }
+};
+
+const wingAnimation = (bird: Bird, time: number, wing: number): number => {
+  return wing * Math.sin((time * 7 + Math.PI / 2) * 2 + bird.flapOffset);
+};
+
+const lookAt = (bird: Bird, delta: number): Vector3 => {
+  return new Vector3(
+    bird.pos.x + bird.vel.x * delta * 0.08,
+    bird.pos.y + bird.vel.y * delta * 0.08,
+    bird.pos.z + bird.vel.z * delta * 0.08
+  );
+};
+
+const perchPos = (bird: Bird): Vector3 => {
+  return new Vector3(bird.perchLoc.x, bird.perchLoc.y - 0.7, bird.perchLoc.z);
+};
+
+const perchRotation = (bird: Bird): number => {
+  if (bird.perchLoc.w !== 0) {
+    if (floor(bird.perchDur) % 2 === 0) return Math.PI / 2;
+    else return -Math.PI / 2;
+  } else {
+    if (floor(bird.perchDur) % 2 === 0) return 0;
+    else return Math.PI;
   }
 };
