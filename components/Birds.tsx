@@ -17,7 +17,6 @@ import {
   DoubleSide,
   Euler,
 } from "three";
-import floor from "lodash-es/floor";
 import { PolesAndWires } from "./PolesAndWires";
 import { BirdAction, BoidConstants, Wire } from "./types";
 import { useGLTF } from "@react-three/drei";
@@ -192,18 +191,18 @@ export const Birds = ({
             key={"fly" + bird.id.toString()}
             position={[bird.pos.x, bird.pos.y, bird.pos.z]}
             geometry={mesh?.geometry}
-            onUpdate={(self) => self.lookAt(lookAt(bird, delta))}
+            onUpdate={(self) => self.lookAt(bird.lookAt(delta).v3())}
           >
             <mesh
               position={[0, 0, -0.5]}
-              rotation={new Euler(0, 0, wingAnimation(bird, time, 1))}
+              rotation={new Euler(0, 0, bird.wingAnimation(time, 1))}
               geometry={mesh2?.geometry}
             >
               <meshStandardMaterial color="blue" />
             </mesh>
             <mesh
               position={[0, 0, -0.5]}
-              rotation={new Euler(0, 0, wingAnimation(bird, time, -1))}
+              rotation={new Euler(0, 0, bird.wingAnimation(time, -1))}
               geometry={mesh3?.geometry}
             >
               <meshStandardMaterial color="blue" />
@@ -213,8 +212,8 @@ export const Birds = ({
         ) : (
           <mesh
             key={"perch" + bird.id.toString()}
-            position={perchPos(bird)}
-            rotation={new Euler(0, perchRotation(bird), 0)}
+            position={bird.perchPos().v3()}
+            rotation={new Euler(0, bird.perchRotation(), 0)}
             geometry={perch?.geometry}
           >
             <meshStandardMaterial color="blue" />
@@ -225,10 +224,6 @@ export const Birds = ({
     </>
   );
 };
-
-const inBiasGroup1 = (index: number, length: number) => index < length / 5;
-const inBiasGroup2 = (index: number, length: number) =>
-  index > length / 5 && index < (2 * length) / 5;
 
 const move = (
   birds: Bird[],
@@ -281,21 +276,21 @@ const move = (
   if (bird.pos.z > front) bird.incremVZ(-1 * consts.turnFactor);
   if (bird.pos.z < back) bird.incremVZ(consts.turnFactor);
 
-  if (inBiasGroup1(bird.id, birds.length)) {
+  if (bird.inBiasGroup1(birds.length)) {
     if (bird.vel.x > 0)
       bird.setBias(Math.min(consts.maxBias, bird.bias + consts.biasIncrm));
     else bird.setBias(Math.max(consts.biasIncrm, bird.bias - consts.biasIncrm));
   }
-  if (inBiasGroup2(bird.id, birds.length)) {
+  if (bird.inBiasGroup2(birds.length)) {
     if (bird.vel.x < 0)
       bird.setBias(Math.min(consts.maxBias, bird.bias + consts.biasIncrm));
     else bird.setBias(Math.max(consts.biasIncrm, bird.bias - consts.biasIncrm));
   }
 
-  if (inBiasGroup1(bird.id, birds.length)) {
+  if (bird.inBiasGroup1(birds.length)) {
     bird.setVX((1 - bird.bias) * bird.vel.x + bird.bias);
   }
-  if (inBiasGroup2(bird.id, birds.length)) {
+  if (bird.inBiasGroup2(birds.length)) {
     bird.setVX((1 - bird.bias) * bird.vel.x - bird.bias);
   }
 
@@ -326,30 +321,12 @@ const moveToPerch = (
   if (dist > 1.8) {
     bird.incremVXYZ(bird.perchLoc.diff(bird.pos).prod(0.01));
 
-    if (bird.pos.x > bird.perchLoc.x) {
-      bird.incremVX(-0.2);
-      bird.incremX(-0.005);
-    }
-    if (bird.pos.x < bird.perchLoc.x) {
-      bird.incremVX(0.2);
-      bird.incremX(0.005);
-    }
-    if (bird.pos.y > bird.perchLoc.y) {
-      bird.incremVY(-0.2);
-      bird.incremY(-0.005);
-    }
-    if (bird.pos.y < bird.perchLoc.y) {
-      bird.incremVY(0.2);
-      bird.incremY(0.005);
-    }
-    if (bird.pos.z > bird.perchLoc.z) {
-      bird.incremVZ(-0.2);
-      bird.incremZ(-0.005);
-    }
-    if (bird.pos.z < bird.perchLoc.z) {
-      bird.incremVZ(0.2);
-      bird.incremZ(0.005);
-    }
+    if (bird.pos.x > bird.perchLoc.x) bird.incremVX(-0.2);
+    if (bird.pos.x < bird.perchLoc.x) bird.incremVX(0.2);
+    if (bird.pos.y > bird.perchLoc.y) bird.incremVY(-0.2);
+    if (bird.pos.y < bird.perchLoc.y) bird.incremVY(0.2);
+    if (bird.pos.z > bird.perchLoc.z) bird.incremVZ(-0.2);
+    if (bird.pos.z < bird.perchLoc.z) bird.incremVZ(0.2);
 
     const speed = bird.getSpeed();
     if (speed > 2) bird.setVXYZ(bird.vel.div(speed).prod(2));
@@ -395,31 +372,5 @@ const findNewRandomNum = (
     return rand;
   } else {
     return findNewRandomNum(usedPositions, numberPoints);
-  }
-};
-
-const wingAnimation = (bird: Bird, time: number, wing: number): number => {
-  return wing * Math.sin((time * 7 + Math.PI / 2) * 2 + bird.flapOffset);
-};
-
-const lookAt = (bird: Bird, delta: number): Vector3 => {
-  return new Vector3(
-    bird.pos.x + bird.vel.x * delta * 0.08,
-    bird.pos.y + bird.vel.y * delta * 0.08,
-    bird.pos.z + bird.vel.z * delta * 0.08
-  );
-};
-
-const perchPos = (bird: Bird): Vector3 => {
-  return new Vector3(bird.perchLoc.x, bird.perchLoc.y - 0.7, bird.perchLoc.z);
-};
-
-const perchRotation = (bird: Bird): number => {
-  if (bird.perchLoc.w !== 0) {
-    if (floor(bird.perchDur) % 2 === 0) return Math.PI / 2;
-    else return -Math.PI / 2;
-  } else {
-    if (floor(bird.perchDur) % 2 === 0) return 0;
-    else return Math.PI;
   }
 };

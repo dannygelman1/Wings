@@ -19,7 +19,7 @@ export const PageCanvas = (): ReactElement => {
     matching: 0.05,
     maxSpeed: 4,
     minSpeed: 2,
-    turnFactor: 0.2,
+    turnFactor: 0.3,
     maxBias: 0.01,
     biasIncrm: 0.00004,
   });
@@ -132,8 +132,8 @@ export const PageCanvas = (): ReactElement => {
         />
         <ConstSlider
           name="turning factor"
-          min={0.1}
-          max={0.5}
+          min={0.2}
+          max={0.6}
           defaultVal={[constants.turnFactor]}
           step={0.001}
           onValueChange={(number: number[]) =>

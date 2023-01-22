@@ -1,3 +1,5 @@
+import { Vector3 } from "three";
+
 export class Vector {
   x: number;
   y: number;
@@ -82,5 +84,9 @@ export class Vector {
 
   xyz(): Vector {
     return new Vector({ x: this.x, y: this.y, z: this.z });
+  }
+
+  v3(): Vector3 {
+    return new Vector3(this.x, this.y, this.z);
   }
 }

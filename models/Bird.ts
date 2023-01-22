@@ -89,13 +89,7 @@ export class Bird {
   }
 
   move(delta: number): void {
-    this.pos.add(
-      new Vector({
-        x: this.vel.x * delta * 0.08,
-        y: this.vel.y * delta * 0.08,
-        z: this.vel.z * delta * 0.08,
-      })
-    );
+    this.pos.add(this.vel.prod(delta * 0.08));
   }
 
   setWillPerch(randomNum: number): void {
@@ -178,125 +172,36 @@ export class Bird {
     return listNeighbords;
   }
 
-  // move = (
-  //   birds: Bird[],
-  //   birdMap: Map<string, Bird[]>,
-  //   neighbords: string[],
-  //   bird: Bird,
-  //   bounds: number[],
-  //   height: number,
-  //   boidConsts: BoidConstants,
-  //   time: number
-  // ): Bird => {
-  //   const currentBirdPos = new Vector3(bird.x, bird.y, bird.z);
-  //   let xPos = 0;
-  //   let yPos = 0;
-  //   let zPos = 0;
-  //   let xVel = 0;
-  //   let yVel = 0;
-  //   let zVel = 0;
-  //   let closeX = 0;
-  //   let closeY = 0;
-  //   let closeZ = 0;
-  //   let neighbors = 0;
+  inBiasGroup1(length: number): boolean {
+    return this.id < length / 5;
+  }
+  inBiasGroup2(length: number): boolean {
+    return this.id > length / 5 && this.id < (2 * length) / 5;
+  }
 
-  //   for (const neighbor of neighbords) {
-  //     if (!new Set(Array.from(birdMap.keys())).has(neighbor)) continue;
-  //     for (const nbirds of birdMap.get(neighbor) || []) {
-  //       if (nbirds.id !== bird.id) {
-  //         const nBirdPos = new Vector3(nbirds.x, nbirds.y, nbirds.z);
-  //         if (currentBirdPos.distanceTo(nBirdPos) < boidConsts.visualRange) {
-  //           xPos += nbirds.x;
-  //           yPos += nbirds.y;
-  //           zPos += nbirds.z;
-  //           xVel += nbirds.vx;
-  //           yVel += nbirds.vy;
-  //           zVel += nbirds.vz;
-  //           neighbors += 1;
-  //         }
-  //         if (currentBirdPos.distanceTo(nBirdPos) < boidConsts.protectedRange) {
-  //           closeX += currentBirdPos.x - nBirdPos.x;
-  //           closeY += currentBirdPos.y - nBirdPos.y;
-  //           closeZ += currentBirdPos.z - nBirdPos.z;
-  //         }
-  //       }
-  //     }
-  //   }
-  //   if (neighbors > 0) {
-  //     bird.incremVXYZ(
-  //       (xPos / neighbors - bird.x) * boidConsts.centeringFactor +
-  //         (xVel / neighbors - bird.vx) * boidConsts.matchingFactor,
-  //       (yPos / neighbors - bird.y) * boidConsts.centeringFactor +
-  //         (yVel / neighbors - bird.vy) * boidConsts.matchingFactor,
-  //       (zPos / neighbors - bird.z) * boidConsts.centeringFactor +
-  //         (zVel / neighbors - bird.vz) * boidConsts.matchingFactor
-  //     );
-  //   }
-  //   bird.incremVXYZ(
-  //     closeX * boidConsts.avoidFactor,
-  //     closeY * boidConsts.avoidFactor,
-  //     closeZ * boidConsts.avoidFactor
-  //   );
+  wingAnimation(time: number, wing: number): number {
+    return wing * Math.sin((time * 7 + Math.PI / 2) * 2 + this.flapOffset);
+  }
 
-  //   const right = bounds[0] / 2;
-  //   const left = (-1 * bounds[0]) / 2;
-  //   const up = bounds[1] / 2 + height;
-  //   const down = (-1 * bounds[1]) / 2 + height;
-  //   const front = bounds[2] / 2;
-  //   const back = (-1 * bounds[2]) / 2;
-  //   if (bird.x > right) bird.incremVX(-1 * boidConsts.turnFactor);
-  //   if (bird.x < left) bird.incremVX(boidConsts.turnFactor);
-  //   if (bird.y > up) bird.incremVY(-1 * boidConsts.turnFactor);
-  //   if (bird.y < down) bird.incremVY(boidConsts.turnFactor);
-  //   if (bird.z > front) bird.incremVZ(-1 * boidConsts.turnFactor);
-  //   if (bird.z < back) bird.incremVZ(boidConsts.turnFactor);
+  lookAt(delta: number): Vector {
+    return this.pos.sum(this.vel.prod(delta * 0.08));
+  }
 
-  //   if (inBiasGroup1(bird.id, birds.length)) {
-  //     if (bird.vx > 0)
-  //       bird.setBias(
-  //         Math.min(boidConsts.maxBias, bird.bias + boidConsts.biasIncrm)
-  //       );
-  //     else
-  //       bird.setBias(
-  //         Math.max(boidConsts.biasIncrm, bird.bias - boidConsts.biasIncrm)
-  //       );
-  //   }
-  //   if (inBiasGroup2(bird.id, birds.length)) {
-  //     if (bird.vx < 0)
-  //       bird.setBias(
-  //         Math.min(boidConsts.maxBias, bird.bias + boidConsts.biasIncrm)
-  //       );
-  //     else
-  //       bird.setBias(
-  //         Math.max(boidConsts.biasIncrm, bird.bias - boidConsts.biasIncrm)
-  //       );
-  //   }
+  perchPos(): Vector {
+    return new Vector({
+      x: this.perchLoc.x,
+      y: this.perchLoc.y - 0.7,
+      z: this.perchLoc.z,
+    });
+  }
 
-  //   if (inBiasGroup1(bird.id, birds.length)) {
-  //     bird.setVX((1 - bird.bias) * bird.vx + bird.bias);
-  //   }
-  //   if (inBiasGroup2(bird.id, birds.length)) {
-  //     bird.setVX((1 - bird.bias) * bird.vx - bird.bias);
-  //   }
-
-  //   const speed = bird.getSpeed();
-  //   if (speed < boidConsts.minSpeed) {
-  //     bird.setVX((bird.vx / speed) * boidConsts.minSpeed);
-  //     bird.setVY((bird.vy / speed) * boidConsts.minSpeed);
-  //     bird.setVZ((bird.vz / speed) * boidConsts.minSpeed);
-  //   }
-  //   if (speed > boidConsts.maxSpeed) {
-  //     bird.setVX((bird.vx / speed) * boidConsts.maxSpeed);
-  //     bird.setVY((bird.vy / speed) * boidConsts.maxSpeed);
-  //     bird.setVZ((bird.vz / speed) * boidConsts.maxSpeed);
-  //   }
-
-  //   if (bird.perchedAt + bird.perchDur + 10 < time) {
-  //     bird.setPerchedAt(0);
-  //   }
-  //   bird.setAction(BirdAction.FLYING);
-  //   bird.move();
-
-  //   return bird;
-  // };
+  perchRotation(): number {
+    if (this.perchLoc.w !== 0) {
+      if (floor(this.perchDur) % 2 === 0) return Math.PI / 2;
+      else return -Math.PI / 2;
+    } else {
+      if (floor(this.perchDur) % 2 === 0) return 0;
+      else return Math.PI;
+    }
+  }
 }
