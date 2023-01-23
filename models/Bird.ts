@@ -98,6 +98,10 @@ export class Bird {
     }
   }
 
+  setPerchLoc(vec: Vector) {
+    this.perchLoc = vec;
+  }
+
   unsetWillPerch() {
     this.perchProb = undefined;
   }

@@ -1,4 +1,4 @@
-import { ReactElement, useState } from "react";
+import { ReactElement, useEffect, useState } from "react";
 import { Color, Euler } from "three";
 import { Wire } from "./types";
 import { Line } from "@react-three/drei";
@@ -8,19 +8,31 @@ import { ellipsePoints } from "./util";
 interface PolesAndWiresProps {
   wires: Wire[];
   points: Vector[];
+  wireReset: number;
 }
 export const PolesAndWires = ({
   wires,
   points,
+  wireReset,
 }: PolesAndWiresProps): ReactElement => {
-  const [plankPos] = useState<Map<number, Vector[]>>(
+  const [plankPos, setPlankPos] = useState<Map<number, Vector[]>>(
     getHorizontalPlankPos(wires, points)
   );
-  const [wireEndPos] = useState<Map<string, Vector[]>>(
+  const [wireEndPos, setWireEndPos] = useState<Map<string, Vector[]>>(
     getWireEndPoints(wires, points)
   );
+
+  useEffect(() => {
+    setPlankPos(getHorizontalPlankPos(wires, points));
+    setWireEndPos(getWireEndPoints(wires, points));
+  }, [wires, points]);
+
   return (
-    <>
+    <group key={wireReset} receiveShadow castShadow>
+      <mesh position={[0, -299, 0]}>
+        <cylinderGeometry args={[400, 400, 2, 50]} />
+        <meshStandardMaterial color={new Color(0xbdb4f0)} roughness={1} />
+      </mesh>
       {wires.map((wire) =>
         Array.from(Array(wire.numParallel)).map((_val, i) => (
           <Line
@@ -33,7 +45,7 @@ export const PolesAndWires = ({
       )}
       {wires.map((wire, i) => {
         const pos = plankPos.get(i);
-        if (!pos) return <></>;
+        if (!pos) return;
         return (
           <group key={i}>
             <mesh
@@ -41,26 +53,30 @@ export const PolesAndWires = ({
               rotation={new Euler(0, wire.rotation + Math.PI / 2, 0)}
             >
               <boxGeometry args={[getPlankLength(wire), 3, 3]} />
-              <meshStandardMaterial color="gray" />
+              <meshStandardMaterial color={new Color(0xa18367)} />
             </mesh>
             <mesh
               position={[pos[1].x, pos[1].y - 8, pos[1].z]}
               rotation={new Euler(0, wire.rotation + Math.PI / 2, 0)}
             >
               <boxGeometry args={[getPlankLength(wire), 3, 3]} />
-              <meshStandardMaterial color="gray" />
+              <meshStandardMaterial color={new Color(0xa18367)} />
             </mesh>
-            <mesh position={[pos[0].x, pos[0].y - 150, pos[0].z]}>
-              <boxGeometry args={[3, 300, 3]} />
-              <meshStandardMaterial color="gray" />
+            <mesh
+              position={[pos[0].x, pos[0].y - (pos[0].y + 300) / 2, pos[0].z]}
+            >
+              <boxGeometry args={[3, pos[0].y + 300, 3]} />
+              <meshStandardMaterial color={new Color(0xa18367)} />
             </mesh>
-            <mesh position={[pos[1].x, pos[1].y - 150, pos[1].z]}>
-              <boxGeometry args={[3, 300, 3]} />
-              <meshStandardMaterial color="gray" />
+            <mesh
+              position={[pos[1].x, pos[1].y - (pos[1].y + 300) / 2, pos[1].z]}
+            >
+              <boxGeometry args={[3, pos[1].y + 300, 3]} />
+              <meshStandardMaterial color={new Color(0xa18367)} />
             </mesh>
             {Array.from(Array(wire.numParallel)).map((_val, j) => {
               const pos = wireEndPos.get(JSON.stringify([i, j]));
-              if (!pos) return <></>;
+              if (!pos) return;
               return (
                 <group key={JSON.stringify([i, j])}>
                   <mesh position={[pos[0].x, pos[0].y - 4, pos[0].z]}>
@@ -77,7 +93,7 @@ export const PolesAndWires = ({
           </group>
         );
       })}
-    </>
+    </group>
   );
 };
 

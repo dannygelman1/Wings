@@ -18,6 +18,7 @@ export const PageCanvas = (): ReactElement => {
   const [allPerching, setAllPerching] = useState<boolean>(false);
   const [numberBirds, setNumberBirds] = useState<number>(400);
   const [optionsVisible, setOptionsVisible] = useState<boolean>(false);
+  const [wireReset, setWireReset] = useState<number>(0);
   const [constants, setConstants] = useState<BoidConstants>({
     turnfactor: 0.2,
     visualRange: 40,
@@ -40,6 +41,7 @@ export const PageCanvas = (): ReactElement => {
           camera={{
             fov: 75,
             position: [400, 50, -100],
+            far: 1600,
           }}
           className="bg-blue-400"
         >
@@ -50,6 +52,7 @@ export const PageCanvas = (): ReactElement => {
             boxOpacity={boxOpacity}
             numberBirds={numberBirds}
             allPerching={allPerching}
+            wireReset={wireReset}
             setAllPerching={setAllPerching}
           />
         </Canvas>
@@ -66,7 +69,7 @@ export const PageCanvas = (): ReactElement => {
         <LogoIcon className="group-hover:text-gray-400 text-black" />
       </button>
       {optionsVisible && (
-        <div className="flex h-full p-2 grow-0 absolute">
+        <div className="flex h-full p-2 absolute">
           <Options
             allPerching={allPerching}
             border={border}
@@ -79,6 +82,8 @@ export const PageCanvas = (): ReactElement => {
             setConstants={setConstants}
             setNumberBirds={setNumberBirds}
             setOptionsVisible={setOptionsVisible}
+            setWireReset={setWireReset}
+            wireReset={wireReset}
           />
         </div>
       )}
@@ -92,12 +97,14 @@ interface OptionsProps {
   boxOpacity: number;
   constants: BoidConstants;
   numberBirds: number;
+  wireReset: number;
   setAllPerching: Dispatch<SetStateAction<boolean>>;
   setBorder: Dispatch<SetStateAction<number[]>>;
   setBoxOpacity: Dispatch<SetStateAction<number>>;
   setConstants: Dispatch<SetStateAction<BoidConstants>>;
   setNumberBirds: Dispatch<SetStateAction<number>>;
   setOptionsVisible: Dispatch<SetStateAction<boolean>>;
+  setWireReset: Dispatch<SetStateAction<number>>;
 }
 
 const Options = ({
@@ -112,6 +119,8 @@ const Options = ({
   setConstants,
   setNumberBirds,
   setOptionsVisible,
+  setWireReset,
+  wireReset,
 }: OptionsProps) => {
   return (
     <div className="flex flex-col p-2 space-y-2 bg-red-500/20 rounded-lg">
@@ -255,20 +264,6 @@ const Options = ({
           }
         />
         <ConstSlider
-          name="bias range"
-          min={0}
-          max={0.03}
-          defaultVal={[constants.biasIncrm, constants.maxBias]}
-          step={0.00001}
-          onValueChange={(number: number[]) =>
-            setConstants({
-              ...constants,
-              biasIncrm: number[0],
-              maxBias: number[1],
-            })
-          }
-        />
-        <ConstSlider
           name="box opacity"
           min={0}
           max={1}
@@ -277,11 +272,17 @@ const Options = ({
           onValueChange={(number: number[]) => setBoxOpacity(number[0])}
         />
         <button
-          className="p-2 bg-green-500 text-white disabled:bg-green-300 rounded-lg"
+          className="p-2 bg-green-500 text-white disabled:bg-green-300 rounded-lg text-xs"
           disabled={allPerching}
           onClick={() => setAllPerching(true)}
         >
           Perch all birds
+        </button>
+        <button
+          className="p-2 bg-green-500 text-white disabled:bg-green-300 rounded-lg text-xs"
+          onClick={() => setWireReset(wireReset + 1)}
+        >
+          Generate new wires
         </button>
       </div>
     </div>

@@ -7,7 +7,6 @@ import {
   useState,
 } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
-import { PointLight } from "three/src/lights/PointLight";
 import {
   Color,
   Vector3,
@@ -16,6 +15,7 @@ import {
   BoxGeometry,
   DoubleSide,
   Euler,
+  DirectionalLight,
 } from "three";
 import { PolesAndWires } from "./PolesAndWires";
 import { BirdAction, BoidConstants, Wire } from "./types";
@@ -27,6 +27,7 @@ import { ellipsePoints } from "./util";
 interface BirdsProps {
   border: number[];
   consts: BoidConstants;
+  wireReset: number;
   boxOpacity: number;
   numberBirds: number;
   allPerching: boolean;
@@ -38,12 +39,21 @@ export const Birds = ({
   boxOpacity,
   numberBirds,
   allPerching,
+  wireReset,
   setAllPerching,
 }: BirdsProps): ReactElement => {
   const { camera, gl, scene } = useThree();
-  const pointLight = useRef<PointLight>(null);
+  const dirLight = useRef<DirectionalLight>(null);
   scene.add(camera);
-  if (pointLight.current) camera.add(pointLight.current);
+  if (dirLight.current) {
+    camera.add(dirLight.current);
+    // dirLight.current.shadow.camera.near = -1000;
+    // dirLight.current.shadow.camera.far = 1000;
+    // dirLight.current.shadow.camera.bottom = -1000;
+    // dirLight.current.shadow.camera.top = 1000;
+    // dirLight.current.shadow.camera.left = -1000;
+    // dirLight.current.shadow.camera.right = 1000;
+  }
   const boxGeo = useRef<BoxGeometry>(null);
 
   const maxPerchingTime = 10;
@@ -52,7 +62,7 @@ export const Birds = ({
   const [time, setTime] = useState<number>(0);
   const [delta, setDelta] = useState<number>(Date.now() - t);
   const [birds, setBirds] = useState<Bird[]>([]);
-  const [wires] = useState<Wire[]>(
+  const [wires, setWires] = useState<Wire[]>(
     Array.from(Array(7)).map(() => ({
       ax: MathUtils.randFloat(-100, 100),
       ay: MathUtils.randFloat(-100, -50),
@@ -64,7 +74,7 @@ export const Birds = ({
       zTranslate: MathUtils.randFloat(-200, 200),
     }))
   );
-  const [points] = useState<Vector[]>(getPointsFromWires(wires));
+  const [points, setPoints] = useState<Vector[]>(getPointsFromWires(wires));
   const [usedPositions, setUsedPositions] = useState<Set<number>>(
     new Set<number>()
   );
@@ -83,6 +93,23 @@ export const Birds = ({
   const [perch] = useState<Mesh | null>(
     perchNode.birdperch instanceof Mesh ? perchNode.birdperch : null
   );
+
+  useEffect(() => {
+    if (wireReset > 0) {
+      const wires1 = Array.from(Array(7)).map(() => ({
+        ax: MathUtils.randFloat(-100, 100),
+        ay: MathUtils.randFloat(-100, -50),
+        xRadius: MathUtils.randFloat(50, 300),
+        yRadius: MathUtils.randFloat(10, 80),
+        numParallel: MathUtils.randInt(2, 3),
+        rotation: MathUtils.randInt(0, 1) === 1 ? Math.PI / 2 : 0,
+        spacing: MathUtils.randInt(12, 35),
+        zTranslate: MathUtils.randFloat(-200, 200),
+      }));
+      setWires(wires1);
+      setPoints(getPointsFromWires(wires1));
+    }
+  }, [wireReset]);
 
   useEffect(() => {
     const diff = numberBirds - birds.length;
@@ -110,12 +137,20 @@ export const Birds = ({
           })
         );
       });
-      setUsedPositions(usedPositions);
     } else {
       Array.from(Array(-1 * diff)).forEach(() => birds.pop());
     }
+
+    if (wireReset > 0) {
+      setUsedPositions(new Set<number>());
+
+      birds.forEach((bird) => {
+        const rand = findNewRandomNum(usedPositions, points.length);
+        bird.setPerchLoc(points[rand]);
+      });
+    }
     setBirds(birds);
-  }, [numberBirds]);
+  }, [numberBirds, points, wireReset]);
 
   useEffect(() => {
     const flyingBirds = birds.filter(
@@ -169,11 +204,12 @@ export const Birds = ({
   });
   return (
     <>
-      <pointLight
-        ref={pointLight}
-        position={[0, 0.2, 4]}
-        intensity={0.1}
-        color={new Color(90, 60, 0)}
+      <directionalLight
+        ref={dirLight}
+        castShadow
+        position={[0, 200, 0]}
+        intensity={0.015}
+        color={new Color(90, 90, 90)}
       />
       <mesh position={[0, height, 0]}>
         <boxGeometry args={[border[0], border[1], border[2]]} ref={boxGeo} />
@@ -220,7 +256,7 @@ export const Birds = ({
           </mesh>
         );
       })}
-      <PolesAndWires points={points} wires={wires} />
+      <PolesAndWires points={points} wires={wires} wireReset={wireReset} />
     </>
   );
 };
