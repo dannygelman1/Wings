@@ -1,15 +1,23 @@
-import { ReactElement, useEffect, useState } from "react";
+import {
+  Dispatch,
+  ReactElement,
+  SetStateAction,
+  useEffect,
+  useState,
+} from "react";
 import { Canvas, useThree } from "@react-three/fiber";
 import { Birds } from "./Birds";
 import { BoidConstants } from "./types";
 import * as Slider from "@radix-ui/react-slider";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
+import cn from "classnames";
 
 export const PageCanvas = (): ReactElement => {
   const [border, setBorder] = useState<number[]>([300, 180, 240]);
   const [boxOpacity, setBoxOpacity] = useState<number>(0);
   const [allPerching, setAllPerching] = useState<boolean>(false);
   const [numberBirds, setNumberBirds] = useState<number>(400);
+  const [optionsVisible, setOptionsVisible] = useState<boolean>(false);
   const [constants, setConstants] = useState<BoidConstants>({
     turnfactor: 0.2,
     visualRange: 40,
@@ -25,8 +33,97 @@ export const PageCanvas = (): ReactElement => {
   });
 
   return (
-    <div className="flex flex-row items-center bg-black space-x-4 h-full w-full absolute">
-      <div className="flex flex-col space-y-4 ml-4 mt-4">
+    <div className="flex h-full w-full">
+      <div className="w-full h-full flex-grow flex bg-black absolute">
+        <Canvas
+          shadows={true}
+          camera={{
+            fov: 75,
+            position: [400, 50, -100],
+          }}
+          className="bg-blue-400"
+        >
+          <CameraController />
+          <Birds
+            border={border}
+            consts={constants}
+            boxOpacity={boxOpacity}
+            numberBirds={numberBirds}
+            allPerching={allPerching}
+            setAllPerching={setAllPerching}
+          />
+        </Canvas>
+      </div>
+      <button
+        className={cn(
+          "absolute mt-2 ml-2 bg-green-400 hover:bg-green-900 rounded-md group",
+          { invisible: optionsVisible }
+        )}
+        onClick={() => {
+          setOptionsVisible(true);
+        }}
+      >
+        <LogoIcon className="group-hover:text-gray-400 text-black" />
+      </button>
+      {optionsVisible && (
+        <div className="flex h-full p-2 grow-0 absolute">
+          <Options
+            allPerching={allPerching}
+            border={border}
+            boxOpacity={boxOpacity}
+            constants={constants}
+            numberBirds={numberBirds}
+            setAllPerching={setAllPerching}
+            setBorder={setBorder}
+            setBoxOpacity={setBoxOpacity}
+            setConstants={setConstants}
+            setNumberBirds={setNumberBirds}
+            setOptionsVisible={setOptionsVisible}
+          />
+        </div>
+      )}
+    </div>
+  );
+};
+
+interface OptionsProps {
+  allPerching: boolean;
+  border: number[];
+  boxOpacity: number;
+  constants: BoidConstants;
+  numberBirds: number;
+  setAllPerching: Dispatch<SetStateAction<boolean>>;
+  setBorder: Dispatch<SetStateAction<number[]>>;
+  setBoxOpacity: Dispatch<SetStateAction<number>>;
+  setConstants: Dispatch<SetStateAction<BoidConstants>>;
+  setNumberBirds: Dispatch<SetStateAction<number>>;
+  setOptionsVisible: Dispatch<SetStateAction<boolean>>;
+}
+
+const Options = ({
+  allPerching,
+  border,
+  boxOpacity,
+  constants,
+  numberBirds,
+  setAllPerching,
+  setBorder,
+  setBoxOpacity,
+  setConstants,
+  setNumberBirds,
+  setOptionsVisible,
+}: OptionsProps) => {
+  return (
+    <div className="flex flex-col p-2 space-y-2 bg-red-500/20 rounded-lg">
+      <button
+        onClick={() => setOptionsVisible(false)}
+        className="flex justify-end"
+      >
+        <div className="flex w-3 h-3">
+          <XIcon />
+        </div>
+      </button>
+      <div className="flex flex-col space-y-4 overflow-y-scroll">
         <ConstSlider
           name="number birds"
           min={0}
@@ -180,32 +277,12 @@ export const PageCanvas = (): ReactElement => {
           onValueChange={(number: number[]) => setBoxOpacity(number[0])}
         />
         <button
-          className="p-2 bg-green-500 text-white disabled:bg-green-300"
+          className="p-2 bg-green-500 text-white disabled:bg-green-300 rounded-lg"
           disabled={allPerching}
           onClick={() => setAllPerching(true)}
         >
           Perch all birds
         </button>
-      </div>
-      <div className="w-4/5 h-[700px] bg-black">
-        <Canvas
-          shadows={true}
-          camera={{
-            fov: 75,
-            position: [400, 50, -100],
-          }}
-          className="bg-blue-400"
-        >
-          <CameraController />
-          <Birds
-            border={border}
-            consts={constants}
-            boxOpacity={boxOpacity}
-            numberBirds={numberBirds}
-            allPerching={allPerching}
-            setAllPerching={setAllPerching}
-          />
-        </Canvas>
       </div>
     </div>
   );
@@ -267,4 +344,69 @@ const CameraController = () => {
     };
   }, [camera, gl]);
   return null;
+};
+
+interface LogoIconsProps {
+  className?: string;
+}
+const LogoIcon = ({ className }: LogoIconsProps) => {
+  return (
+    <svg
+      version="1.1"
+      id="Layer_1"
+      xmlns="http://www.w3.org/2000/svg"
+      xmlnsXlink="http://www.w3.org/1999/xlink"
+      x="0px"
+      y="0px"
+      viewBox="0 0 72 42"
+      xmlSpace="preserve"
+      className={cn(className, "w-[72px] h-[42px]")}
+    >
+      <path
+        d="M 10 10 C 20 20, 40 20, 50 10"
+        stroke="currentColor"
+        fill="transparent"
+      />
+      <path
+        d="M 15 11 C 25 21, 45 21, 55 11"
+        stroke="currentColor"
+        fill="transparent"
+      />
+      <path
+        d="M 20 12 C 30 22, 50 22, 60 12"
+        stroke="currentColor"
+        fill="transparent"
+      />
+      <polyline points="8,10 23,12" fill="none" stroke="currentColor" />
+      <polyline points="47,10 63,12" fill="none" stroke="currentColor" />
+      <polyline points="15,7 15,35" fill="none" stroke="currentColor" />
+      <polyline points="55,7 55,35" fill="none" stroke="currentColor" />
+    </svg>
+  );
+};
+
+interface XIconProps {
+  className?: string;
+}
+const XIcon = ({ className }: XIconProps) => {
+  return (
+    <svg
+      version="1.1"
+      id="Layer_1"
+      xmlns="http://www.w3.org/2000/svg"
+      xmlnsXlink="http://www.w3.org/1999/xlink"
+      x="0px"
+      y="0px"
+      viewBox="0 0 24 24"
+      xmlSpace="preserve"
+      className={cn(className, "w-6 h-6")}
+    >
+      <path
+        fillRule="evenodd"
+        clipRule="evenodd"
+        d="M4.22676 4.22676C4.5291 3.92441 5.01929 3.92441 5.32163 4.22676L12 10.9051L18.6784 4.22676C18.9807 3.92441 19.4709 3.92441 19.7732 4.22676C20.0756 4.5291 20.0756 5.01929 19.7732 5.32163L13.0949 12L19.7732 18.6784C20.0756 18.9807 20.0756 19.4709 19.7732 19.7732C19.4709 20.0756 18.9807 20.0756 18.6784 19.7732L12 13.0949L5.32163 19.7732C5.01929 20.0756 4.5291 20.0756 4.22676 19.7732C3.92441 19.4709 3.92441 18.9807 4.22676 18.6784L10.9051 12L4.22676 5.32163C3.92441 5.01929 3.92441 4.5291 4.22676 4.22676Z"
+        fill="currentColor"
+      />
+    </svg>
+  );
 };
