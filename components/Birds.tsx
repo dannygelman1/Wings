@@ -6,17 +6,8 @@ import {
   useRef,
   useState,
 } from "react";
-import { useFrame, useThree } from "@react-three/fiber";
-import {
-  Color,
-  Vector3,
-  MathUtils,
-  Mesh,
-  BoxGeometry,
-  DoubleSide,
-  Euler,
-  DirectionalLight,
-} from "three";
+import { useFrame } from "@react-three/fiber";
+import { Color, MathUtils, Mesh, BoxGeometry, DoubleSide, Euler } from "three";
 import { PolesAndWires } from "./PolesAndWires";
 import { BirdAction, BoidConstants, Wire } from "./types";
 import { useGLTF } from "@react-three/drei";
@@ -42,18 +33,6 @@ export const Birds = ({
   wireReset,
   setAllPerching,
 }: BirdsProps): ReactElement => {
-  const { camera, gl, scene } = useThree();
-  const dirLight = useRef<DirectionalLight>(null);
-  scene.add(camera);
-  if (dirLight.current) {
-    camera.add(dirLight.current);
-    // dirLight.current.shadow.camera.near = -1000;
-    // dirLight.current.shadow.camera.far = 1000;
-    // dirLight.current.shadow.camera.bottom = -1000;
-    // dirLight.current.shadow.camera.top = 1000;
-    // dirLight.current.shadow.camera.left = -1000;
-    // dirLight.current.shadow.camera.right = 1000;
-  }
   const boxGeo = useRef<BoxGeometry>(null);
 
   const maxPerchingTime = 10;
@@ -204,12 +183,10 @@ export const Birds = ({
   });
   return (
     <>
-      <directionalLight
-        ref={dirLight}
-        castShadow
-        position={[0, 200, 0]}
-        intensity={0.015}
-        color={new Color(90, 90, 90)}
+      <hemisphereLight
+        position={[0, 0, 0]}
+        intensity={0.001}
+        color={new Color(232, 199, 155)}
       />
       <mesh position={[0, height, 0]}>
         <boxGeometry args={[border[0], border[1], border[2]]} ref={boxGeo} />
@@ -234,16 +211,16 @@ export const Birds = ({
               rotation={new Euler(0, 0, bird.wingAnimation(time, 1))}
               geometry={mesh2?.geometry}
             >
-              <meshStandardMaterial color="blue" />
+              <meshStandardMaterial color="brown" />
             </mesh>
             <mesh
               position={[0, 0, -0.5]}
               rotation={new Euler(0, 0, bird.wingAnimation(time, -1))}
               geometry={mesh3?.geometry}
             >
-              <meshStandardMaterial color="blue" />
+              <meshStandardMaterial color="brown" />
             </mesh>
-            <meshStandardMaterial color="blue" />
+            <meshStandardMaterial color="brown" />
           </mesh>
         ) : (
           <mesh
@@ -252,7 +229,7 @@ export const Birds = ({
             rotation={new Euler(0, bird.perchRotation(), 0)}
             geometry={perch?.geometry}
           >
-            <meshStandardMaterial color="blue" />
+            <meshStandardMaterial color="brown" />
           </mesh>
         );
       })}

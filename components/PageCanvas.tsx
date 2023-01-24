@@ -40,10 +40,10 @@ export const PageCanvas = (): ReactElement => {
           shadows={true}
           camera={{
             fov: 75,
-            position: [400, 50, -100],
+            position: [400, 0, -100],
             far: 1600,
           }}
-          className="bg-blue-400"
+          className="bg-gradient-to-b from-red-400 to-orange-200"
         >
           <CameraController />
           <Birds
@@ -59,14 +59,14 @@ export const PageCanvas = (): ReactElement => {
       </div>
       <button
         className={cn(
-          "absolute mt-2 ml-2 bg-green-400 hover:bg-green-900 rounded-md group",
+          "absolute mt-2 ml-2 bg-[#8b81c2] hover:bg-[#aaa1da] rounded-md group",
           { invisible: optionsVisible }
         )}
         onClick={() => {
           setOptionsVisible(true);
         }}
       >
-        <LogoIcon className="group-hover:text-gray-400 text-black" />
+        <LogoIcon className="text-gray-100 hover:text-white" />
       </button>
       {optionsVisible && (
         <div className="flex h-full p-2 absolute">
@@ -123,7 +123,7 @@ const Options = ({
   wireReset,
 }: OptionsProps) => {
   return (
-    <div className="flex flex-col p-2 space-y-2 bg-red-500/20 rounded-lg">
+    <div className="flex flex-col p-2 space-y-2 bg-red-900/40 rounded-lg">
       <button
         onClick={() => setOptionsVisible(false)}
         className="flex justify-end"
@@ -272,14 +272,14 @@ const Options = ({
           onValueChange={(number: number[]) => setBoxOpacity(number[0])}
         />
         <button
-          className="p-2 bg-green-500 text-white disabled:bg-green-300 rounded-lg text-xs"
+          className="p-2 bg-[#998fcf] text-white disabled:bg-green-300 rounded-lg text-xs"
           disabled={allPerching}
           onClick={() => setAllPerching(true)}
         >
           Perch all birds
         </button>
         <button
-          className="p-2 bg-green-500 text-white disabled:bg-green-300 rounded-lg text-xs"
+          className="p-2 bg-[#998fcf] text-white disabled:bg-green-300 rounded-lg text-xs"
           onClick={() => setWireReset(wireReset + 1)}
         >
           Generate new wires
@@ -321,12 +321,12 @@ const ConstSlider = ({
         aria-label="Volume"
       >
         <Slider.Track className="relative bg-white rounded-full h-2 flex-grow">
-          <Slider.Range className="absolute bg-green-500 rounded-full h-full" />
+          <Slider.Range className="absolute bg-[#998fcf] rounded-full h-full" />
         </Slider.Track>
         {defaultVal.map((i) => (
           <Slider.Thumb
             key={i}
-            className="block w-5 h-5 bg-green-500 rounded-full outline-none "
+            className="block w-5 h-5 bg-[#998fcf] rounded-full outline-none "
           />
         ))}
       </Slider.Root>
