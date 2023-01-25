@@ -58,16 +58,16 @@ export const Birds = ({
     new Set<number>()
   );
 
-  const { nodes } = useGLTF("/Wings/bird.gltf");
+  const { nodes } = useGLTF("/Wings/birdattempt1.gltf");
   const { nodes: perchNode } = useGLTF("/Wings/perch.gltf");
   const [mesh] = useState<Mesh | null>(
-    nodes.bird instanceof Mesh ? nodes.bird : null
+    nodes.birdnew2 instanceof Mesh ? nodes.birdnew2 : null
   );
   const [mesh2] = useState<Mesh | null>(
-    nodes.bird001 instanceof Mesh ? nodes.bird001 : null
+    nodes.birdnew2001 instanceof Mesh ? nodes.birdnew2001 : null
   );
   const [mesh3] = useState<Mesh | null>(
-    nodes.bird002 instanceof Mesh ? nodes.bird002 : null
+    nodes.birdnew2002 instanceof Mesh ? nodes.birdnew2002 : null
   );
   const [perch] = useState<Mesh | null>(
     perchNode.birdperch instanceof Mesh ? perchNode.birdperch : null
@@ -203,20 +203,20 @@ export const Birds = ({
             name={bird.id.toString()}
             key={"fly" + bird.id.toString()}
             position={[bird.pos.x, bird.pos.y, bird.pos.z]}
-            geometry={mesh?.geometry}
+            geometry={mesh3?.geometry}
             onUpdate={(self) => self.lookAt(bird.lookAt(delta).v3())}
           >
             <mesh
-              position={[0, 0, -0.5]}
+              position={[0, -0.2, 0]}
               rotation={new Euler(0, 0, bird.wingAnimation(time, 1))}
               geometry={mesh2?.geometry}
             >
               <meshStandardMaterial color="brown" />
             </mesh>
             <mesh
-              position={[0, 0, -0.5]}
+              position={[0, -0.2, 0]}
               rotation={new Euler(0, 0, bird.wingAnimation(time, -1))}
-              geometry={mesh3?.geometry}
+              geometry={mesh?.geometry}
             >
               <meshStandardMaterial color="brown" />
             </mesh>
