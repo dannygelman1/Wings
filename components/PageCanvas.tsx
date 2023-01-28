@@ -97,7 +97,6 @@ interface OptionsProps {
   boxOpacity: number;
   constants: BoidConstants;
   numberBirds: number;
-  wireReset: number;
   setAllPerching: Dispatch<SetStateAction<boolean>>;
   setBorder: Dispatch<SetStateAction<number[]>>;
   setBoxOpacity: Dispatch<SetStateAction<number>>;
@@ -105,6 +104,7 @@ interface OptionsProps {
   setNumberBirds: Dispatch<SetStateAction<number>>;
   setOptionsVisible: Dispatch<SetStateAction<boolean>>;
   setWireReset: Dispatch<SetStateAction<number>>;
+  wireReset: number;
 }
 
 const Options = ({
@@ -123,13 +123,13 @@ const Options = ({
   wireReset,
 }: OptionsProps) => {
   return (
-    <div className="flex flex-col p-2 space-y-2 bg-red-900/40 rounded-lg">
+    <div className="flex flex-col p-2 space-y-2 bg-red-900/70 rounded-lg">
       <button
         onClick={() => setOptionsVisible(false)}
         className="flex justify-end"
       >
         <div className="flex w-3 h-3">
-          <XIcon />
+          <XIcon className="text-white" />
         </div>
       </button>
       <div className="flex flex-col space-y-4 overflow-y-scroll">
@@ -142,7 +142,7 @@ const Options = ({
           onValueChange={(number: number[]) => setNumberBirds(number[0])}
         />
         <ConstSlider
-          name="x boundry"
+          name="x boundary"
           min={30}
           max={300}
           defaultVal={[border[0]]}
@@ -152,7 +152,7 @@ const Options = ({
           }
         />
         <ConstSlider
-          name="y boundry"
+          name="y boundary"
           min={30}
           max={300}
           defaultVal={[border[1]]}
@@ -162,7 +162,7 @@ const Options = ({
           }
         />
         <ConstSlider
-          name="z boundry"
+          name="z boundary"
           min={30}
           max={300}
           defaultVal={[border[2]]}
@@ -172,7 +172,7 @@ const Options = ({
           }
         />
         <ConstSlider
-          name="visual range"
+          name="range of birds to follow"
           min={0}
           max={60}
           defaultVal={[constants.visualRange]}
@@ -185,7 +185,7 @@ const Options = ({
           }
         />
         <ConstSlider
-          name="protected range"
+          name="range of birds to avoid"
           min={0}
           max={20}
           defaultVal={[constants.protectedRange]}
@@ -198,7 +198,7 @@ const Options = ({
           }
         />
         <ConstSlider
-          name="centering factor"
+          name="move to flock's center"
           min={0}
           max={0.01}
           defaultVal={[constants.centering]}
@@ -211,7 +211,7 @@ const Options = ({
           }
         />
         <ConstSlider
-          name="avoid factor"
+          name="avoid nearby birds"
           min={0}
           max={0.1}
           defaultVal={[constants.avoid]}
@@ -224,7 +224,7 @@ const Options = ({
           }
         />
         <ConstSlider
-          name="matching factor"
+          name="follow flock's direction"
           min={0}
           max={0.1}
           defaultVal={[constants.matching]}
@@ -237,7 +237,7 @@ const Options = ({
           }
         />
         <ConstSlider
-          name="turning factor"
+          name="turn speed"
           min={0.2}
           max={0.6}
           defaultVal={[constants.turnFactor]}
@@ -272,14 +272,14 @@ const Options = ({
           onValueChange={(number: number[]) => setBoxOpacity(number[0])}
         />
         <button
-          className="p-2 bg-[#998fcf] text-white disabled:bg-green-300 rounded-lg text-xs"
+          className="p-2 bg-[#998fcf] hover:bg-[#8077b1] text-white disabled:bg-[#a5a0be] rounded-lg text-xs"
           disabled={allPerching}
           onClick={() => setAllPerching(true)}
         >
           Perch all birds
         </button>
         <button
-          className="p-2 bg-[#998fcf] text-white disabled:bg-green-300 rounded-lg text-xs"
+          className="p-2 bg-[#998fcf] hover:bg-[#8077b1] text-white rounded-lg text-xs"
           onClick={() => setWireReset(wireReset + 1)}
         >
           Generate new wires

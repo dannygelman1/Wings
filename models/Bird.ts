@@ -194,7 +194,7 @@ export class Bird {
   perchPos(): Vector {
     return new Vector({
       x: this.perchLoc.x,
-      y: this.perchLoc.y - 0.7,
+      y: this.perchLoc.y - 1,
       z: this.perchLoc.z,
     });
   }

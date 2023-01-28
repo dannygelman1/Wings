@@ -58,19 +58,19 @@ export const Birds = ({
     new Set<number>()
   );
 
-  const { nodes } = useGLTF("/Wings/birdattempt1.gltf");
-  const { nodes: perchNode } = useGLTF("/Wings/perch.gltf");
-  const [mesh] = useState<Mesh | null>(
-    nodes.birdnew2 instanceof Mesh ? nodes.birdnew2 : null
+  const { nodes } = useGLTF("/Wings/bird.gltf");
+  const { nodes: perchNode } = useGLTF("/Wings/birdperch.gltf");
+  const [wing1] = useState<Mesh | null>(
+    nodes.wing1 instanceof Mesh ? nodes.wing1 : null
   );
-  const [mesh2] = useState<Mesh | null>(
-    nodes.birdnew2001 instanceof Mesh ? nodes.birdnew2001 : null
+  const [wing2] = useState<Mesh | null>(
+    nodes.wing2 instanceof Mesh ? nodes.wing2 : null
   );
-  const [mesh3] = useState<Mesh | null>(
-    nodes.birdnew2002 instanceof Mesh ? nodes.birdnew2002 : null
+  const [body] = useState<Mesh | null>(
+    nodes.body instanceof Mesh ? nodes.body : null
   );
   const [perch] = useState<Mesh | null>(
-    perchNode.birdperch instanceof Mesh ? perchNode.birdperch : null
+    perchNode.perch instanceof Mesh ? perchNode.perch : null
   );
 
   useEffect(() => {
@@ -132,11 +132,13 @@ export const Birds = ({
   }, [numberBirds, points, wireReset]);
 
   useEffect(() => {
-    const flyingBirds = birds.filter(
-      (bird) => bird.action !== BirdAction.PERCHED
-    );
-    if (flyingBirds.length === 0) setAllPerching(false);
-  }, [birds]);
+    if (allPerching) {
+      const flyingBirds = birds.filter(
+        (bird) => bird.action !== BirdAction.PERCHED
+      );
+      if (flyingBirds.length === 0) setAllPerching(false);
+    }
+  }, [allPerching, birds, setAllPerching]);
 
   useFrame((state) => {
     setTime(state.clock.getElapsedTime());
@@ -203,20 +205,20 @@ export const Birds = ({
             name={bird.id.toString()}
             key={"fly" + bird.id.toString()}
             position={[bird.pos.x, bird.pos.y, bird.pos.z]}
-            geometry={mesh3?.geometry}
+            geometry={body?.geometry}
             onUpdate={(self) => self.lookAt(bird.lookAt(delta).v3())}
           >
             <mesh
               position={[0, -0.2, 0]}
               rotation={new Euler(0, 0, bird.wingAnimation(time, 1))}
-              geometry={mesh2?.geometry}
+              geometry={wing1?.geometry}
             >
               <meshStandardMaterial color="brown" />
             </mesh>
             <mesh
               position={[0, -0.2, 0]}
               rotation={new Euler(0, 0, bird.wingAnimation(time, -1))}
-              geometry={mesh?.geometry}
+              geometry={wing2?.geometry}
             >
               <meshStandardMaterial color="brown" />
             </mesh>
