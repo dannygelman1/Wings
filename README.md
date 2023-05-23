@@ -8,6 +8,10 @@
   - [Perching](#perching)
   - [Procedural poles and wires](#procedural-poles-and-wires)
 - [Implementation](#implementation)
+  - [Overview](#overview)
+  - [Accelration grid](#accelration-grid)
+  - [Perching](#perching)
+  - [Procedural poles and wires](#procedural-poles-and-wires)
 
 # Inspiration
 I got inspired to make this after playing Wingspan, the boardgame, with friends. I love the art in the game, and love learning about birds from the really fun bird facts on the cards. I learned about the boids simulation from my computer graphics class in college, but never implemented it. Playing wingspan, was just the inspiration I was missing. This implementation is based on this [article](https://people.ece.cornell.edu/land/courses/ece4760/labs/s2021/Boids/Boids.html).
