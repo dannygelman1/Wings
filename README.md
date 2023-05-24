@@ -49,5 +49,14 @@ There are three main principles in the boids algorothim - cohesion, separation, 
 - `alighnment` - how much the birds move in the direction of the flock
   - this is controlled by a `matching factor` (how strongly they move together) and `visual range` (the radius around them that encompasses birds to follow)
 ## Accelration grid
+I implemented an acceleration grid to make the simulation run at a reasonable frame rate. A big part of this simulation involved comparing the distance of every bird to every other bird at every time step. This quickly becomes very computationally intense. 
+
+To avoid this, I only check each bird against birds in their own grid (blue) and 7 other neighboring grids(green). You can see in the diagrams below, I find which grids to check based on which corner of their own grid the bird is. 
+<img width="470" alt="bird2" src="https://github.com/dannygelman1/Wings/assets/45411340/425b1938-e125-4c2c-ae1e-bd903f0eaaeb">
+<img width="470" alt="grid3" src="https://github.com/dannygelman1/Wings/assets/45411340/29cb88d2-48c4-4778-9b0d-c3f814b96123">
+
+So you can image, if the bird would instead be in a lower corner, the four grids underneath (not in diagram) would be highlighted.
+
+
 ## Perching
 ## Procedural poles and wires
