@@ -48,6 +48,8 @@ There are three main principles in the boids algorothim - cohesion, separation, 
   - this is controlled by an `avoid factor` (how strongly they move away) and `protected range` (the radius around them that encompasses birds to avoid)
 - `alighnment` - how much the birds move in the direction of the flock
   - this is controlled by a `matching factor` (how strongly they move together) and `visual range` (the radius around them that encompasses birds to follow)
+
+This simulation was made with React-Three-Fiber and slightly more complex because it was in 3D instead of 2D.
 ## Accelration grid
 I implemented an acceleration grid to make the simulation run at a reasonable frame rate. A big part of this simulation involved comparing the distance of every bird to every other bird at every time step. This quickly becomes very computationally intense. 
 
@@ -59,4 +61,7 @@ So you can image, if the bird would instead be in a lower corner, the four grids
 
 
 ## Perching
+I implemented perching by assigning each bird their own starting position on the wires. Each one has a unique position, and I make sure there are no overlaps. Then the perching behaviour was just a matter of incrementing their velcoity in the direction of `currentPosition - perchLocation`. I also had two different models for the birds, one for flying and one for perching. Once the bird gets a certain distance away from its perch location, I swicth the model to the perching version.
+
 ## Procedural poles and wires
+For the wires, I used the `EllipseCurve` from Three.js, and found ranges of parameters that worked to get a telephone wire appearance. Once I was happy with the wires, I used math to find the endpoints of all the wires, and those were the positions of boxes I added to the scene to act as the poles. This system is entirley procedural ao every time you refresh, or click the `generate wires` button, it will generate a new unique system of poles and wires. 
